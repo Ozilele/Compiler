@@ -1,0 +1,5 @@
+PROGRAM IS
+    n, p
+IN
+    p:=p-n;
+END

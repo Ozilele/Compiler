@@ -1,0 +1,37 @@
+READ
+RST b
+STORE b
+READ
+INC b
+STORE b
+RST b
+INC b
+LOAD b
+PUT c
+RST d
+LOAD d
+SUB c
+JZERO 25
+RST b
+LOAD b
+PUT b
+RST a
+ADD b
+SHL a
+SHL a
+ADD b
+RST b
+STORE b
+JUMP 33
+RST b
+LOAD b
+PUT c
+INC b
+LOAD b
+ADD c
+RST b
+STORE b
+RST b
+LOAD b
+WRITE
+HALT

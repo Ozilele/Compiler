@@ -1,0 +1,31 @@
+READ
+RST b
+STORE b
+READ
+INC b
+STORE b
+RST c
+INC c
+INC c
+RST b
+LOAD b
+SUB c
+RST b
+STORE b
+INC b
+LOAD b
+PUT b
+RST a
+ADD b
+SHL a
+RST b
+INC b
+STORE b
+RST b
+LOAD b
+JPOS 6
+RST b
+INC b
+LOAD b
+WRITE
+HALT

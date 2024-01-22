@@ -1,0 +1,12 @@
+PROGRAM IS
+    n, p
+IN
+    READ n;
+    READ p;
+    IF n>p THEN
+        n:=n*5;
+    ELSE
+        n:=n+p;
+    ENDIF
+    WRITE n;
+END

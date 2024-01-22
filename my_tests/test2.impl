@@ -1,0 +1,11 @@
+PROGRAM IS
+    n, p
+IN
+    READ n;
+    READ p;
+    REPEAT
+        n:=n-2;
+        p:=p*2;
+    UNTIL n=0;
+    WRITE p;
+END

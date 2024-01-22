@@ -1,0 +1,53 @@
+READ
+RST b
+STORE b
+READ
+INC b
+STORE b
+RST b
+LOAD b
+JZERO 48
+PUT g
+PUT c
+RST a
+INC a
+SHL a
+SHL a
+SHL a
+SHL a
+PUT e
+SUB c
+JZERO 48
+GET e
+RST f
+RST d
+INC d
+SHL g
+SUB g
+JZERO 30
+GET e
+SHL d
+JUMP 24
+SHR g
+GET e
+SUB g
+INC a
+SUB c
+JZERO 46
+ADD c
+DEC a
+PUT e
+GET f
+ADD d
+PUT f
+GET c
+PUT g
+GET e
+JUMP 22
+GET d
+ADD f
+RST b
+INC b
+STORE b
+WRITE
+HALT
