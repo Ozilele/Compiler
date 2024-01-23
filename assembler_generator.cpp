@@ -217,29 +217,43 @@ void AssemblerGenerator::multiply(long long num1, const char *str_, const char *
       if(result == 0) { // n * 0
         compiler->add_machine_command("RST a");
       } else { // n * 5
-        compiler->get_register_value(variable_num, var, var_s, 1); // 
-        if(!compiler->checkLastCommand("STORE b")) {
-          if(compiler->checkLastCommand("LOAD b")) {
-            compiler->add_machine_command("LOAD a");
-          } else {
-            compiler->add_machine_command("LOAD b"); // zaladowanie zmiennej do r_a <- n
-          }
-        }
-        compiler->add_machine_command("PUT b"); // r_b <- r_a
-        long long originalResult = result; 
-        compiler->add_machine_command("RST a");
-        while(result > 0) {
-          if(result % 2 == 0) {
-            commands.push_back("SHL a");
-            result /= 2;
-          } else {
-            commands.push_back("ADD b"); // r_a <- r_a + r_b
-            result--;
-          }
-        }
 
-        for(auto comm = commands.rbegin(); comm != commands.rend(); comm++) {
-          compiler->add_machine_command(*comm);
+        if(result == 2) { // n * 2
+          compiler->get_register_value(variable_num, var, var_s, 1); // 
+          if(!compiler->checkLastCommand("STORE b")) {
+            if(compiler->checkLastCommand("LOAD b")) {
+              compiler->add_machine_command("LOAD a");
+            } else {
+              compiler->add_machine_command("LOAD b"); // zaladowanie zmiennej do r_a <- n
+            }
+          }
+          compiler->add_machine_command("SHL a");
+        } 
+        else {
+          compiler->get_register_value(variable_num, var, var_s, 1); // 
+          if(!compiler->checkLastCommand("STORE b")) {
+            if(compiler->checkLastCommand("LOAD b")) {
+              compiler->add_machine_command("LOAD a");
+            } else {
+              compiler->add_machine_command("LOAD b"); // zaladowanie zmiennej do r_a <- n
+            }
+          }
+          compiler->add_machine_command("PUT b"); // r_b <- r_a
+          long long originalResult = result; 
+          compiler->add_machine_command("RST a");
+          while(result > 0) {
+            if(result % 2 == 0) {
+              commands.push_back("SHL a");
+              result /= 2;
+            } else {
+              commands.push_back("ADD b"); // r_a <- r_a + r_b
+              result--;
+            }
+          }
+
+          for(auto comm = commands.rbegin(); comm != commands.rend(); comm++) {
+            compiler->add_machine_command(*comm);
+          }
         }
       }
       break;
@@ -347,63 +361,77 @@ void AssemblerGenerator::divide(long long num1, const char *str_, const char *st
       }
       else { 
         if(u == 1) { // case when n/5(result is the divisor)
-          compiler->set_number(result, 2); // r_c <- result // ?
-          compiler->add_machine_command("GET c");
-          compiler->add_machine_command("PUT e"); // r_e <- r_c
 
-          compiler->get_register_value(variable_num, var, var_s, 3);
-          if(!compiler->checkLastCommand("STORE d")) {
-            if(compiler->checkLastCommand("LOAD d")) {
-              compiler->add_machine_command("LOAD a");
-            } else {
-              compiler->add_machine_command("LOAD d"); // r_a <- p_rd(n)
+          if(result == 2) { // n / 2
+            compiler->get_register_value(variable_num, var, var_s, 1);
+            if(!compiler->checkLastCommand("STORE b")) {
+              if(compiler->checkLastCommand("LOAD b")) {
+                compiler->add_machine_command("LOAD a");
+              } else {
+              compiler->add_machine_command("LOAD b"); // zaladowanie zmiennej do r_a <- n
             }
+           }
+           compiler->add_machine_command("SHR a");
           }
 
-          long long commStart = compiler->getCommandsNumber();
-          compiler->add_machine_command("JZERO ");
-          compiler->add_machine_command("PUT d"); // r_d <- r_a(n)
-          compiler->add_machine_command("RST b");
-          compiler->add_machine_command("RST g");
-          compiler->add_machine_command("RST f"); // counter;
-          long long jumpEnd = compiler->getCommandsNumber();
-          compiler->add_machine_command("GET e"); // r_a <- r_e(result)
-          compiler->add_machine_command("PUT c"); // r_c <- result
-          compiler->add_machine_command("SHL c"); // r_c <- r_c * 2
-          compiler->add_machine_command("GET d"); // r_a <- r_c
-          compiler->add_machine_command("INC a");
-          compiler->add_machine_command("SUB c"); // r_a <- r_a - r_c
-          compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 4));
-          compiler->add_machine_command("INC f"); // r_f <- r_f + 1
-          compiler->add_machine_command("DEC a");
-          long long num_lin_2 = compiler->getCommandsNumber() - 7;
-          compiler->add_machine_command("JUMP " + std::to_string(num_lin_2));
-          // compiler->add_machine_command("DEC a");
-          compiler->add_machine_command("SHR c"); // discard // r_c = 8(partial dividend)
-          compiler->add_machine_command("GET f"); // r_a <- r_f <- 2
-          compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 19));
-          compiler->add_machine_command("INC b"); // r_b <- 1
-          compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 5));
-          compiler->add_machine_command("SHL b"); // r_b <- 2
-          compiler->add_machine_command("DEC f"); // r_f <- 1
-          compiler->add_machine_command("GET f"); // r_a <- r_f <- 1
-          long long jump_to = compiler->getCommandsNumber() - 4;
-          compiler->add_machine_command("JUMP " + std::to_string(jump_to));
-          compiler->add_machine_command("GET g");
-          compiler->add_machine_command("ADD b");
-          compiler->add_machine_command("RST b");
-          compiler->add_machine_command("PUT g"); // r_g <- 4
-          compiler->add_machine_command("GET d"); // r_a <- r_d(n) <- 15
-          compiler->add_machine_command("SUB c"); // r_a <- r_a - r_c = 2(new dividend) = 2
-          compiler->add_machine_command("PUT d"); // r_d <- r_a
-          compiler->add_machine_command("INC a");
-          compiler->add_machine_command("SUB e");
-          compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 4));
-          compiler->add_machine_command("RST f");
-          compiler->add_machine_command("JUMP " + std::to_string(jumpEnd));
-          compiler->add_machine_command("INC g");
-          compiler->add_machine_command("GET g"); // result
-          compiler->change_command(std::to_string(compiler->getCommandsNumber()), commStart, 1);
+          else {
+            compiler->set_number(result, 2); // r_c <- result // ?
+            compiler->add_machine_command("GET c");
+            compiler->add_machine_command("PUT e"); // r_e <- r_c
+
+            compiler->get_register_value(variable_num, var, var_s, 3);
+            if(!compiler->checkLastCommand("STORE d")) {
+              if(compiler->checkLastCommand("LOAD d")) {
+                compiler->add_machine_command("LOAD a");
+              } else {
+                compiler->add_machine_command("LOAD d"); // r_a <- p_rd(n)
+              }
+            }
+            long long commStart = compiler->getCommandsNumber();
+            compiler->add_machine_command("JZERO ");
+            compiler->add_machine_command("PUT d"); // r_d <- r_a(n)
+            compiler->add_machine_command("RST b");
+            compiler->add_machine_command("RST g");
+            compiler->add_machine_command("RST f"); // counter;
+            long long jumpEnd = compiler->getCommandsNumber();
+            compiler->add_machine_command("GET e"); // r_a <- r_e(result)
+            compiler->add_machine_command("PUT c"); // r_c <- result
+            compiler->add_machine_command("SHL c"); // r_c <- r_c * 2
+            compiler->add_machine_command("GET d"); // r_a <- r_c
+            compiler->add_machine_command("INC a");
+            compiler->add_machine_command("SUB c"); // r_a <- r_a - r_c
+            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 4));
+            compiler->add_machine_command("INC f"); // r_f <- r_f + 1
+            compiler->add_machine_command("DEC a");
+            long long num_lin_2 = compiler->getCommandsNumber() - 7;
+            compiler->add_machine_command("JUMP " + std::to_string(num_lin_2));
+            // compiler->add_machine_command("DEC a");
+            compiler->add_machine_command("SHR c"); // discard // r_c = 8(partial dividend)
+            compiler->add_machine_command("GET f"); // r_a <- r_f <- 2
+            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 19));
+            compiler->add_machine_command("INC b"); // r_b <- 1
+            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 5));
+            compiler->add_machine_command("SHL b"); // r_b <- 2
+            compiler->add_machine_command("DEC f"); // r_f <- 1
+            compiler->add_machine_command("GET f"); // r_a <- r_f <- 1
+            long long jump_to = compiler->getCommandsNumber() - 4;
+            compiler->add_machine_command("JUMP " + std::to_string(jump_to));
+            compiler->add_machine_command("GET g");
+            compiler->add_machine_command("ADD b");
+            compiler->add_machine_command("RST b");
+            compiler->add_machine_command("PUT g"); // r_g <- 4
+            compiler->add_machine_command("GET d"); // r_a <- r_d(n) <- 15
+            compiler->add_machine_command("SUB c"); // r_a <- r_a - r_c = 2(new dividend) = 2
+            compiler->add_machine_command("PUT d"); // r_d <- r_a
+            compiler->add_machine_command("INC a");
+            compiler->add_machine_command("SUB e");
+            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 4));
+            compiler->add_machine_command("RST f");
+            compiler->add_machine_command("JUMP " + std::to_string(jumpEnd));
+            compiler->add_machine_command("INC g");
+            compiler->add_machine_command("GET g"); // result
+            compiler->change_command(std::to_string(compiler->getCommandsNumber()), commStart, 1);
+          }
         } 
         else { // case when 5 / n
           if(result == 0) {

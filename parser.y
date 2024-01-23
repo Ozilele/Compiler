@@ -145,15 +145,17 @@ command:
         $$ = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-      | start T_WHILE condition T_DO commands T_ENDWHILE {
-        compiler.change_command(std::to_string(compiler.getCommandsNumber() + 1), $3, 1);
-        compiler.add_machine_command("JUMP " + std::to_string($1));
+      | start T_WHILE condition T_DO commands T_ENDWHILE { // tested
+        std::cout << std::to_string(compiler.getCommandsNumber() + 1) << " command nr" << std::endl;
+        // $3 to koniec warunku condition, $1 to numer linii od ktorej zaczyna sie petla while
+        compiler.change_command(std::to_string(compiler.getCommandsNumber() + 1), $3, 1); // dodanie wartosci jumpa w przypadku niespelnienia condition
+        compiler.add_machine_command("JUMP " + std::to_string($1)); // dodanie jumpa do startu pętli
         $$ = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
       | start T_REPEAT commands T_UNTIL condition T_SEMICOLON { // tested
         std::cout << $1 << ", " << $5 << ", " << std::endl;
-        compiler.change_command(std::to_string($1), $5 - 1, 1); // Jump to the start of repeat loop
+        compiler.change_command(std::to_string($1), $5 - 1, 1); // Jump to the start of repeat loop after condition is checked
         $$ = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }

@@ -124,8 +124,7 @@ void Compiler::set_number(long long value, int r) {
         commandsToDo.push_back(command);
         value_2_reg_1 *= 2; 
       }
-      value -= value_2_reg_1; // 121 - 64 = 57
-      // value_2_reg_1 to wartosc w rejestrze registerList[r];
+      value -= value_2_reg_1;
     }
 
     if(value == 0) {
@@ -144,8 +143,7 @@ void Compiler::set_number(long long value, int r) {
         commandsToDo.push_back(command);
         value_2_reg_2 *= 2; 
       }
-      value -= value_2_reg_2; // 57 - 32 = 25
-      // value_2_reg_2 to wartosc w rejestrze r_e
+      value -= value_2_reg_2;
     }
 
     if(registerList[r] != 'a' && value_2_reg_2 * 2 > value) {
@@ -269,7 +267,7 @@ void Compiler::clear_register_value() {
   }
 }
 
-// 14, 4, 1
+// 22, 9, 1
 void Compiler::change_command(std::string s, int i, int number) {
   if(machineCommands[i] == "JUMP " || machineCommands[i] == "JPOS " || machineCommands[i] == "JZERO " || machineCommands[i] == "JUMPR ") {
     machineCommands[i] += s; // dodanie miejsca skoku, np. JPOS 14
@@ -284,6 +282,9 @@ void Compiler::change_command(std::string s, int i, int number) {
     if((machineCommands[k] == "JZERO " || machineCommands[k] == "JPOS ") && number > 0) {
       machineCommands[k] += s;
       number--;
+    }
+    if(number == 0) {
+      break;
     }
   }
 }

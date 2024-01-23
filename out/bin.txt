@@ -1,0 +1,33 @@
+READ
+RST b
+STORE b
+RST b
+LOAD b
+SHR a
+INC b
+STORE b
+SHL a
+STORE b
+RST b
+INC b
+LOAD b
+PUT c
+RST d
+LOAD d
+SUB c
+JZERO 22
+RST a
+INC a
+WRITE
+JUMP 24
+RST a
+WRITE
+RST b
+LOAD b
+SHR a
+RST b
+STORE b
+RST b
+LOAD b
+JPOS 3
+HALT

@@ -1,5 +1,21 @@
 PROGRAM IS
-    n, p
+   a,b,c,d,wyk,pot,o
 IN
-    p:=p-n;
+    READ a;
+    READ b;
+    READ c;
+    d:=1;
+    wyk:=b;
+    pot:=a%c;
+    WHILE wyk>0 DO
+	    o:=wyk%2;
+	    IF o=1 THEN
+	        d:=d*pot;
+	        d:=d%c;
+	    ENDIF
+	    wyk:=wyk/2;
+	    pot:=pot*pot;
+	    pot:=pot%c;
+    ENDWHILE
+    WRITE d;
 END

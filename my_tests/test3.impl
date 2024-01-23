@@ -1,12 +1,19 @@
 PROGRAM IS
-    n, p
+    x, y, a, b, c
 IN
-    READ n;
-    READ p;
-    IF n>p THEN
-        n:=n*5;
-    ELSE
-        n:=n+p;
-    ENDIF
-    WRITE n;
+    READ a;
+    READ b;
+    x:=a;
+    y:=b;
+    WHILE y>0 DO
+        IF x>=y THEN 
+            x:=x-y;
+        ELSE 
+            x:=x+y;
+            y:=x-y;
+            x:=x-y;    
+        ENDIF
+    ENDWHILE
+    c:=x;
+    WRITE c;
 END
