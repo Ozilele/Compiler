@@ -562,11 +562,11 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    70,    70,    76,    86,    93,    96,   100,   103,   109,
-     116,   122,   130,   139,   148,   156,   162,   165,   172,   191,
-     197,   208,   215,   218,   221,   224,   231,   237,   242,   247,
-     255,   259,   265,   271,   280,   289,   298,   307,   319,   323,
-     327,   331,   335,   339,   346,   353,   361,   372,   383
+       0,    70,    70,    76,    86,    93,   100,   107,   110,   116,
+     123,   129,   156,   165,   173,   182,   188,   191,   199,   218,
+     225,   238,   279,   282,   285,   288,   294,   300,   305,   310,
+     318,   322,   328,   334,   343,   352,   361,   370,   382,   386,
+     390,   394,   398,   402,   409,   416,   424,   435,   446
 };
 #endif
 
@@ -1214,12 +1214,12 @@ yyreduce:
   case 3: /* start_main: %empty  */
 #line 76 "parser.y"
   {
-    // compiler.add_beginning_procedure("", compiler.getCommandsNumber());
-    // if(compiler.getCommandsNumber() == 1) {
-    //   compiler.clearCommands();
-    // } else {
-    //   compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1);
-    // }
+    compiler.add_beginning_procedure("", compiler.getCommandsNumber());
+    if(compiler.getCommandsNumber() == 1) {
+      compiler.clearCommands();
+    } else {
+      compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1);
+    }
   }
 #line 1225 "parser.cpp"
     break;
@@ -1239,35 +1239,42 @@ yyreduce:
   case 5: /* procedures: procedures T_PROCEDURE proc_head T_IS T_IN commands T_END  */
 #line 93 "parser.y"
                                                                   {
-
+        compiler.set_number(compiler.get_declaration(" RETURN"), 1);
+        compiler.add_machine_command("LOAD b");
+        compiler.clear_declaration();
+        compiler.add_machine_command("JUMPR a");
+        compiler.clear_register_value();
       }
-#line 1245 "parser.cpp"
+#line 1249 "parser.cpp"
     break;
 
   case 6: /* procedures: %empty  */
-#line 96 "parser.y"
-        {}
-#line 1251 "parser.cpp"
+#line 100 "parser.y"
+        {
+        // std::cout << " Nie ma procedur " << std::endl;
+        compiler.add_machine_command("JUMP ");
+      }
+#line 1258 "parser.cpp"
     break;
 
   case 7: /* main: T_PROGRAM T_IS declarations T_IN commands T_END  */
-#line 100 "parser.y"
+#line 107 "parser.y"
                                                     {
       // Finish compilation
     }
-#line 1259 "parser.cpp"
+#line 1266 "parser.cpp"
     break;
 
   case 8: /* main: T_PROGRAM T_IS T_IN commands T_END  */
-#line 103 "parser.y"
+#line 110 "parser.y"
                                          {
       // Finish compilation
     }
-#line 1267 "parser.cpp"
+#line 1274 "parser.cpp"
     break;
 
   case 9: /* commands: commands command  */
-#line 109 "parser.y"
+#line 116 "parser.y"
                           {
         if((yyvsp[-1].num) > (yyvsp[0].num)) {
           (yyval.num) = (yyvsp[-1].num);
@@ -1275,48 +1282,66 @@ yyreduce:
           (yyval.num) = (yyvsp[0].num);
         }
       }
-#line 1279 "parser.cpp"
+#line 1286 "parser.cpp"
     break;
 
   case 10: /* commands: command  */
-#line 116 "parser.y"
+#line 123 "parser.y"
                 {
         (yyval.num) = (yyvsp[0].num);
       }
-#line 1287 "parser.cpp"
+#line 1294 "parser.cpp"
     break;
 
   case 11: /* command: identifier T_ASSIGN expression T_SEMICOLON  */
-#line 122 "parser.y"
+#line 129 "parser.y"
                                                  { // tested
+        bool whether = false;
+        for(auto i : compiler.function_arguments) {
+          if((i.first <= compiler.get_declaration((yyvsp[-3].value).str) && compiler.get_declaration((yyvsp[-3].value).str) < i.second) || (i.first <= compiler.get_declaration((yyvsp[-3].value).str1) && compiler.get_declaration((yyvsp[-3].value).str1) < i.second)) {
+            compiler.add_machine_command("PUT h");
+            whether = true;
+            break;
+          }
+        }
+
+        if(whether == false && (yyvsp[-3].value).num == -1) { // case T[a] := ...
+          compiler.add_machine_command("PUT h");
+          whether = true;
+        }
+
         compiler.check_declaration((yyvsp[-3].value).num, (yyvsp[-3].value).str, (yyvsp[-3].value).str1); // check if variable was declared
+        compiler.add_machine_command("RST b");
         compiler.get_register_value((yyvsp[-3].value).num, (yyvsp[-3].value).str, (yyvsp[-3].value).str1, 1);
+
+        if(whether) {
+          compiler.add_machine_command("PUT b"); // r_b <- r_a
+          compiler.add_machine_command("GET h"); // r_a <- r_h
+        }
         compiler.add_machine_command("STORE b");
-        // change_var_initialization
         compiler.set_variable_initialization((yyvsp[-3].value).str);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1300 "parser.cpp"
+#line 1326 "parser.cpp"
     break;
 
   case 12: /* command: start T_IF condition T_THEN commands start T_ELSE commands T_ENDIF  */
-#line 130 "parser.y"
+#line 156 "parser.y"
                                                                            { // tested
         std::cout << (yyvsp[-4].num) << ", if scope" << std::endl;
         std::cout << (yyvsp[-6].num)  << ", cond scope " << std::endl;
         std::cout << (yyvsp[-1].num) << ", else scope" << std::endl;
-        compiler.change_command(std::to_string((yyvsp[-4].num) + 1), (yyvsp[-6].num), 1);
-        compiler.add_commands_inside("JUMP " + std::to_string((yyvsp[-1].num) + 1), (yyvsp[-4].num)); // method which adds jump when the if ends so that else block will not be completed
+        compiler.change_command(std::to_string((yyvsp[-4].num) + 1), (yyvsp[-6].num), 1); // albo $3 -1
+        compiler.add_commands_inside("JUMP " + std::to_string((yyvsp[-1].num) + 1), (yyvsp[-4].num)); // method which adds jump when the if ends so that else block will not be completedx
         (yyval.num) = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-#line 1314 "parser.cpp"
+#line 1340 "parser.cpp"
     break;
 
   case 13: /* command: start T_IF condition T_THEN commands T_ENDIF  */
-#line 139 "parser.y"
+#line 165 "parser.y"
                                                      { // tested
-        // commands is the body of if
         // $5 is the number of line where the scope of this if ends, $3 is the number of line where the condition of if ends
         std::cout << (yyvsp[-1].num) << ", ifik" << std::endl;
         std::cout << (yyvsp[-3].num) << ", cond" << std::endl;
@@ -1324,12 +1349,13 @@ yyreduce:
         (yyval.num) = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-#line 1328 "parser.cpp"
+#line 1353 "parser.cpp"
     break;
 
   case 14: /* command: start T_WHILE condition T_DO commands T_ENDWHILE  */
-#line 148 "parser.y"
-                                                         {
+#line 173 "parser.y"
+                                                         { // tested
+        std::cout << (yyvsp[-3].num) << ", cond while" << std::endl;
         std::cout << std::to_string(compiler.getCommandsNumber() + 1) << " command nr" << std::endl;
         // $3 to koniec warunku condition, $1 to numer linii od ktorej zaczyna sie petla while
         compiler.change_command(std::to_string(compiler.getCommandsNumber() + 1), (yyvsp[-3].num), 1); // dodanie wartosci jumpa w przypadku niespelnienia condition
@@ -1337,42 +1363,43 @@ yyreduce:
         (yyval.num) = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-#line 1341 "parser.cpp"
+#line 1367 "parser.cpp"
     break;
 
   case 15: /* command: start T_REPEAT commands T_UNTIL condition T_SEMICOLON  */
-#line 156 "parser.y"
+#line 182 "parser.y"
                                                               { // tested
         std::cout << (yyvsp[-5].num) << ", " << (yyvsp[-1].num) << ", " << std::endl;
         compiler.change_command(std::to_string((yyvsp[-5].num)), (yyvsp[-1].num) - 1, 1); // Jump to the start of repeat loop after condition is checked
         (yyval.num) = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-#line 1352 "parser.cpp"
+#line 1378 "parser.cpp"
     break;
 
   case 16: /* command: proc_call T_SEMICOLON  */
-#line 162 "parser.y"
+#line 188 "parser.y"
                               {
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1360 "parser.cpp"
+#line 1386 "parser.cpp"
     break;
 
   case 17: /* command: T_READ identifier T_SEMICOLON  */
-#line 165 "parser.y"
+#line 191 "parser.y"
                                       { // READ x, READ T[2], T[a] // tested
         compiler.add_machine_command("READ");
         compiler.get_register_value((yyvsp[-1].value).num, (yyvsp[-1].value).str, (yyvsp[-1].value).str1, 1);
         compiler.add_machine_command("STORE b"); // p_rb <- ra
         // change_variable_initialization
+        // compiler.set_variable_initialization($2.str);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1372 "parser.cpp"
+#line 1399 "parser.cpp"
     break;
 
   case 18: /* command: T_WRITE value T_SEMICOLON  */
-#line 172 "parser.y"
+#line 199 "parser.y"
                                   { // tested
         if(strcmp((yyvsp[-1].value).str, "") == 0) {
           compiler.set_number((yyvsp[-1].value).num, 0);
@@ -1389,144 +1416,179 @@ yyreduce:
         compiler.add_machine_command("WRITE");
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1393 "parser.cpp"
+#line 1420 "parser.cpp"
     break;
 
   case 19: /* start: %empty  */
-#line 191 "parser.y"
+#line 218 "parser.y"
     {
       (yyval.num) = compiler.getCommandsNumber();
       compiler.clear_register_value();
     }
-#line 1402 "parser.cpp"
+#line 1429 "parser.cpp"
     break;
 
   case 20: /* proc_head: T_IDENTIFIER T_LEFTPARENTHESIS args_decl T_RIGHTPARENTHESIS  */
-#line 197 "parser.y"
+#line 225 "parser.y"
                                                                   {
-        // compiler.add_beginning_procedure($1, compiler.getCommandsNumber());
-        // compiler.add_declaration(" RETURN", 1);
-        // compiler.add_procedure($1);
-        // int min = compiler.get_first_declaration();
-        // int max = compiler.get_declaration(" RETURN");
-        // compiler.function_arguments.push_back(std::make_pair(min, max));
+        std::cout << "Procedure name: " << (yyvsp[-3].str) << std::endl;
+        compiler.add_beginning_procedure((yyvsp[-3].str), compiler.getCommandsNumber());
+        compiler.add_declaration(" RETURN", 1);
+        compiler.add_procedure((yyvsp[-3].str));
+        int min = compiler.get_first_declaration();
+        int max = compiler.get_declaration(" RETURN"); // zakres komorek pamieci ktore sa zarezerwowane dla procedury
+        std::cout << "func args " << min << ", " << max << std::endl;
+        compiler.function_arguments.push_back(std::make_pair(min, max));
       }
-#line 1415 "parser.cpp"
+#line 1444 "parser.cpp"
     break;
 
   case 21: /* proc_call: T_IDENTIFIER T_LEFTPARENTHESIS args T_RIGHTPARENTHESIS  */
-#line 208 "parser.y"
+#line 238 "parser.y"
                                                              {
-        // TODO -> procedure call
+        if(compiler.size_args_procedure((yyvsp[-3].str)) - 1 != compiler.arguments.size()) {
+          if(compiler.size_args_procedure((yyvsp[-3].str)) == -1) {
+            yyerror((std::string("Undefined procedure ") + (yyvsp[-3].str)).c_str());
+          }
+          yyerror((std::string("Invalid procedure params ") + (yyvsp[-3].str)).c_str());
+        }
+        if(compiler.getCommandsNumber() < compiler.get_beginning_next_procedure((yyvsp[-3].str)) || compiler.get_beginning_next_procedure((yyvsp[-3].str)) == -1) {
+          yyerror((std::string("Invalid procedure use ") + (yyvsp[-3].str)).c_str());
+        }
 
+        std::vector<std::pair<int, bool>> args = compiler.get_procedure_args((yyvsp[-3].str));
+
+        for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
+          compiler.set_variable_initialization(compiler.arguments[i]);
+          std::cout << "Param to procedure " << compiler.arguments[i] << std::endl;
+          if(args[i].second == 1) {
+            if(!compiler.is_Tab(compiler.arguments[i])) {
+              yyerror((std::string("Invalid procedure params ") + (yyvsp[-3].str)).c_str());
+            }
+          }
+          compiler.get_register_value(0, compiler.arguments[i], nullptr, 0); // r_a <- 
+          compiler.set_number(compiler.getIndex((yyvsp[-3].str)), 1);
+          compiler.add_machine_command("STORE b");
+          compiler.add_machine_command("RST a");
+        }
+
+        compiler.set_number(compiler.getIndex((yyvsp[-3].str)), 1);
+        compiler.add_machine_command("RST a");
+        compiler.add_machine_command("INC a");
+        compiler.add_machine_command("SHL a");
+        compiler.add_machine_command("SHL a");
+        compiler.add_machine_command("STRK c");
+        compiler.add_machine_command("ADD c");
+        compiler.add_machine_command("STORE b");
+        compiler.add_machine_command("JUMP " + std::to_string(compiler.get_beginning_procedure((yyvsp[-3].str)))); // jump to the line in which procedure starts
+        compiler.arguments.clear();
       }
-#line 1424 "parser.cpp"
+#line 1487 "parser.cpp"
     break;
 
   case 22: /* declarations: declarations T_COMMA T_IDENTIFIER  */
-#line 215 "parser.y"
+#line 279 "parser.y"
                                         {
         compiler.add_declaration((yyvsp[0].str), 1); // memory Cell to 1
       }
-#line 1432 "parser.cpp"
+#line 1495 "parser.cpp"
     break;
 
   case 23: /* declarations: declarations T_COMMA T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET  */
-#line 218 "parser.y"
+#line 282 "parser.y"
                                                                                {
         compiler.add_declaration((yyvsp[-3].str), (yyvsp[-1].num)); // tab 
       }
-#line 1440 "parser.cpp"
+#line 1503 "parser.cpp"
     break;
 
   case 24: /* declarations: T_IDENTIFIER  */
-#line 221 "parser.y"
+#line 285 "parser.y"
                      {
         compiler.add_declaration((yyvsp[0].str), 1);
       }
-#line 1448 "parser.cpp"
+#line 1511 "parser.cpp"
     break;
 
   case 25: /* declarations: T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET  */
-#line 224 "parser.y"
-                                                          { // t[]
-        std::cout << "Hejo " << std::endl;
+#line 288 "parser.y"
+                                                          { // sito[]
         compiler.add_declaration((yyvsp[-3].str), (yyvsp[-1].num));
       }
-#line 1457 "parser.cpp"
+#line 1519 "parser.cpp"
     break;
 
   case 26: /* args_decl: args_decl T_COMMA T_IDENTIFIER  */
-#line 231 "parser.y"
-                                     {
+#line 294 "parser.y"
+                                     { // args_decl, x
         // parametry definiowane w procedurze proc_name(a, b, c)
-        compiler.procedure_arguments.push_back(false);
+        compiler.procedure_args.push_back(false);
         compiler.add_declaration((yyvsp[0].str), 1);
         compiler.set_variable_initialization((yyvsp[0].str));
       }
-#line 1468 "parser.cpp"
+#line 1530 "parser.cpp"
     break;
 
   case 27: /* args_decl: args_decl T_COMMA T T_IDENTIFIER  */
-#line 237 "parser.y"
-                                         {
-        compiler.procedure_arguments.push_back(true);
+#line 300 "parser.y"
+                                         { // args_decl, T x
+        compiler.procedure_args.push_back(true);
         compiler.add_declaration((yyvsp[0].str), 1);
         compiler.set_variable_initialization((yyvsp[0].str));
       }
-#line 1478 "parser.cpp"
+#line 1540 "parser.cpp"
     break;
 
   case 28: /* args_decl: T_IDENTIFIER  */
-#line 242 "parser.y"
+#line 305 "parser.y"
                      { // variable
-        compiler.procedure_arguments.push_back(false);
+        compiler.procedure_args.push_back(false);
         compiler.add_declaration((yyvsp[0].str), 1);
         compiler.set_variable_initialization((yyvsp[0].str));
       }
-#line 1488 "parser.cpp"
+#line 1550 "parser.cpp"
     break;
 
   case 29: /* args_decl: T T_IDENTIFIER  */
-#line 247 "parser.y"
+#line 310 "parser.y"
                        {
-        compiler.procedure_arguments.push_back(true);
+        compiler.procedure_args.push_back(true);
         compiler.add_declaration((yyvsp[0].str), 1);
         compiler.set_variable_initialization((yyvsp[0].str));
       }
-#line 1498 "parser.cpp"
+#line 1560 "parser.cpp"
     break;
 
   case 30: /* args: args T_COMMA T_IDENTIFIER  */
-#line 255 "parser.y"
+#line 318 "parser.y"
                               {
       // procedure call
-      compiler.arguments.push_back((yyvsp[0].str));
+      compiler.arguments.push_back((yyvsp[0].str)); // dodanie przekazanych procedurze parametrów
     }
-#line 1507 "parser.cpp"
+#line 1569 "parser.cpp"
     break;
 
   case 31: /* args: T_IDENTIFIER  */
-#line 259 "parser.y"
+#line 322 "parser.y"
                    {
       compiler.arguments.push_back((yyvsp[0].str));
     }
-#line 1515 "parser.cpp"
+#line 1577 "parser.cpp"
     break;
 
   case 32: /* expression: value  */
-#line 265 "parser.y"
+#line 328 "parser.y"
             {
         if(strcmp((yyvsp[0].value).str, "") != 0) {
           compiler.check_declaration((yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
         }
         asmGenerator.get_number((yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
       }
-#line 1526 "parser.cpp"
+#line 1588 "parser.cpp"
     break;
 
   case 33: /* expression: value T_ADD value  */
-#line 271 "parser.y"
+#line 334 "parser.y"
                           {
         if(strcmp((yyvsp[-2].value).str, "") != 0) {
           compiler.check_declaration((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1);
@@ -1536,11 +1598,11 @@ yyreduce:
         }
         asmGenerator.add((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
       }
-#line 1540 "parser.cpp"
+#line 1602 "parser.cpp"
     break;
 
   case 34: /* expression: value T_SUB value  */
-#line 280 "parser.y"
+#line 343 "parser.y"
                           {
         if(strcmp((yyvsp[-2].value).str, "") != 0) {
           compiler.check_declaration((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1);
@@ -1550,11 +1612,11 @@ yyreduce:
         }
         asmGenerator.subtract((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
       }
-#line 1554 "parser.cpp"
+#line 1616 "parser.cpp"
     break;
 
   case 35: /* expression: value T_MUL value  */
-#line 289 "parser.y"
+#line 352 "parser.y"
                           {
         if(strcmp((yyvsp[-2].value).str, "") != 0) {
           compiler.check_declaration((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1);
@@ -1564,11 +1626,11 @@ yyreduce:
         }
         asmGenerator.multiply((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
       }
-#line 1568 "parser.cpp"
+#line 1630 "parser.cpp"
     break;
 
   case 36: /* expression: value T_DIV value  */
-#line 298 "parser.y"
+#line 361 "parser.y"
                           {
         if(strcmp((yyvsp[-2].value).str, "") != 0) {
           compiler.check_declaration((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1);
@@ -1578,11 +1640,11 @@ yyreduce:
         }
         asmGenerator.divide((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
       }
-#line 1582 "parser.cpp"
+#line 1644 "parser.cpp"
     break;
 
   case 37: /* expression: value T_MOD value  */
-#line 307 "parser.y"
+#line 370 "parser.y"
                           {
         if(strcmp((yyvsp[-2].value).str, "") != 0) {
           compiler.check_declaration((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1);
@@ -1592,65 +1654,65 @@ yyreduce:
         }
         asmGenerator.modulo((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
       }
-#line 1596 "parser.cpp"
+#line 1658 "parser.cpp"
     break;
 
   case 38: /* condition: value T_EQ value  */
-#line 319 "parser.y"
+#line 382 "parser.y"
                        {
         conditioner.equal((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1605 "parser.cpp"
+#line 1667 "parser.cpp"
     break;
 
   case 39: /* condition: value T_NEQ value  */
-#line 323 "parser.y"
+#line 386 "parser.y"
                           {
         conditioner.not_equal((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1614 "parser.cpp"
+#line 1676 "parser.cpp"
     break;
 
   case 40: /* condition: value T_GT value  */
-#line 327 "parser.y"
+#line 390 "parser.y"
                          {
         conditioner.greater((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1623 "parser.cpp"
+#line 1685 "parser.cpp"
     break;
 
   case 41: /* condition: value T_LT value  */
-#line 331 "parser.y"
+#line 394 "parser.y"
                          {
         conditioner.less((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1632 "parser.cpp"
+#line 1694 "parser.cpp"
     break;
 
   case 42: /* condition: value T_GTEQ value  */
-#line 335 "parser.y"
+#line 398 "parser.y"
                            {
         conditioner.greater_equal((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1641 "parser.cpp"
+#line 1703 "parser.cpp"
     break;
 
   case 43: /* condition: value T_LTEQ value  */
-#line 339 "parser.y"
+#line 402 "parser.y"
                            {
         conditioner.less_equal((yyvsp[-2].value).num, (yyvsp[-2].value).str, (yyvsp[-2].value).str1, (yyvsp[0].value).num, (yyvsp[0].value).str, (yyvsp[0].value).str1);
         (yyval.num) = compiler.getCommandsNumber();
       }
-#line 1650 "parser.cpp"
+#line 1712 "parser.cpp"
     break;
 
   case 44: /* value: T_NUM  */
-#line 346 "parser.y"
+#line 409 "parser.y"
           {
       (yyval.value).num = (yyvsp[0].num);
       (yyval.value).str = new char[1];
@@ -1658,21 +1720,21 @@ yyreduce:
       (yyval.value).str[0] = '\0';
       (yyval.value).str1[0] = '\0';
     }
-#line 1662 "parser.cpp"
+#line 1724 "parser.cpp"
     break;
 
   case 45: /* value: identifier  */
-#line 353 "parser.y"
+#line 416 "parser.y"
                  {
       (yyval.value).num = (yyvsp[0].value).num;
       (yyval.value).str = (yyvsp[0].value).str;
       (yyval.value).str1 = (yyvsp[0].value).str1;
     }
-#line 1672 "parser.cpp"
+#line 1734 "parser.cpp"
     break;
 
   case 46: /* identifier: T_IDENTIFIER  */
-#line 361 "parser.y"
+#line 424 "parser.y"
                    {
         std::string check = compiler.check_var_declaration((yyvsp[0].str), false);
         if(check != "") {
@@ -1684,11 +1746,11 @@ yyreduce:
         (yyval.value).str1 = new char[1];
         (yyval.value).str1[0] = '\0';
       }
-#line 1688 "parser.cpp"
+#line 1750 "parser.cpp"
     break;
 
   case 47: /* identifier: T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET  */
-#line 372 "parser.y"
+#line 435 "parser.y"
                                                           { // T[10]
         std::string check = compiler.check_var_declaration((yyvsp[-3].str), true);
         if(check != "") {
@@ -1700,11 +1762,11 @@ yyreduce:
         (yyval.value).str1 = new char[1];
         (yyval.value).str1[0] = '\0';
       }
-#line 1704 "parser.cpp"
+#line 1766 "parser.cpp"
     break;
 
   case 48: /* identifier: T_IDENTIFIER T_LEFT_BRACKET T_IDENTIFIER T_RIGHT_BRACKET  */
-#line 383 "parser.y"
+#line 446 "parser.y"
                                                                  { // T[a]
         std::string check = compiler.check_var_declaration((yyvsp[-3].str), true);
         if(check != "") {
@@ -1715,11 +1777,11 @@ yyreduce:
         (yyval.value).str = (yyvsp[-3].str);
         (yyval.value).str1 = (yyvsp[-1].str); // indeks w tablicy to zmienna
       }
-#line 1719 "parser.cpp"
+#line 1781 "parser.cpp"
     break;
 
 
-#line 1723 "parser.cpp"
+#line 1785 "parser.cpp"
 
       default: break;
     }
@@ -1912,10 +1974,11 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 395 "parser.y"
+#line 458 "parser.y"
 
 
 void yyerror(const char* const message) {
+  std::cout << "CO tam " << std::endl;
   std::cout << "Error: " <<  message << std::endl;
   exit(1);
 }

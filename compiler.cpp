@@ -56,7 +56,6 @@ void Compiler::get_register_value(int num, const char *str, const char *str1, in
         break;
       }
     }
-
     add_machine_command("LOAD a");
     add_machine_command("ADD b");
     add_machine_command(std::string("PUT ") + registerList[registerNum]);
@@ -77,6 +76,7 @@ void Compiler::get_register_value(int num, const char *str, const char *str1, in
 
 void Compiler::set_number(long long value, int r) {
   std::vector<std::string> commandsToDo;
+  bool isNewRegisterApplied = false;
   long long value_2_reg_1 = 1;
   long long value_2_reg_2 = 1;
   
@@ -92,35 +92,40 @@ void Compiler::set_number(long long value, int r) {
     std::string command;
     if(value == registers[r]) {
       break;
-    } else if(value - registers[r] == -1 && registers[r] != -1) {
+    } 
+    else if(value - registers[r] == -1 && registers[r] != -1) {
       command = std::string("DEC ") + registerList[r];
       commandsToDo.push_back(command);
       value++;
       break;
-    } else if(value - registers[r] == -2 && registers[r] != -1) {
+    } 
+    else if(value - registers[r] == -2 && registers[r] != -1) {
       command = std::string("DEC ") + registerList[r];
       commandsToDo.push_back(command);
       commandsToDo.push_back(command);
       value += 2;
       break;
-    } else if(value - registers[r] == 1 && registers[r] != -1) {
+    } 
+    else if(value - registers[r] == 1 && registers[r] != -1) {
       command = std::string("INC ") + registerList[r];
       commandsToDo.push_back(command);
       value--;
       break;
-    } else if(value - registers[r] == 2 && registers[r] != -1) {
+    } 
+    else if(value - registers[r] == 2 && registers[r] != -1) {
       command = std::string("INC ") + registerList[r];
       commandsToDo.push_back(command);
       commandsToDo.push_back(command);
       value -= 2;
       break;
-    } 
-    else if(value_2_reg_1 * 2 < value) {
-      command = std::string("INC ") + registerList[r]; // r_a <- 1
+    }
+
+    if(value_2_reg_1 * 2 < value) {
+      command = std::string("INC ") + registerList[r];
       commandsToDo.push_back(command);
       long long oldValue = value;
       while(value_2_reg_1 * 2 <= oldValue) {
-        command = std::string("SHL ") + registerList[r]; // r_a < 2 * r_a
+        command = std::string("SHL ") + registerList[r];
         commandsToDo.push_back(command);
         value_2_reg_1 *= 2; 
       }
@@ -130,16 +135,15 @@ void Compiler::set_number(long long value, int r) {
     if(value == 0) {
       break;
     }
-    bool isNewRegisterApplied = false;
 
     if(value_2_reg_2 * 2 < value) { 
       isNewRegisterApplied = true;
-      command = std::string("RST e"); // wprowadzam nowy rejestr
+      command = std::string("RST e");
       commandsToDo.push_back(command);
-      command = std::string("INC e"); // r_e <- 1
+      command = std::string("INC e");
       commandsToDo.push_back(command);
       while(value_2_reg_2 * 2 <= value) {
-        command = std::string("SHL e"); // r_a < 2 * r_a
+        command = std::string("SHL e");
         commandsToDo.push_back(command);
         value_2_reg_2 *= 2; 
       }
@@ -148,29 +152,96 @@ void Compiler::set_number(long long value, int r) {
 
     if(registerList[r] != 'a' && value_2_reg_2 * 2 > value) {
       if(isNewRegisterApplied) {
-        commandsToDo.push_back(std::string("GET e")); // r_a <- r_e
+        commandsToDo.push_back("PUT g"); // r_g <- r_a
+        commandsToDo.push_back("GET e"); // r_a <- r_e
         commandsToDo.push_back(std::string("ADD ") + registerList[r]); // r_a <- r_a + registerList[r]
-        for(int i = 1; i <= value; i++) {
-          commandsToDo.push_back(std::string("INC a"));
+
+        while(value > 0) {
+          if(value == 1) { // Warunek stopu while
+            commandsToDo.push_back("INC a");
+            break;
+          }
+          if(value <= 4) {
+            for(int i = 1; i <= value; i++) {
+              commandsToDo.push_back("INC a");
+            }
+            break;
+          }
+          long long tmp = 1;
+          commandsToDo.push_back("RST f");
+          commandsToDo.push_back("INC f");
+          while(tmp * 2 <= value) {
+            commandsToDo.push_back("SHL f"); // r_f <- 2 * r_f
+            tmp *= 2;
+          }
+          commandsToDo.push_back("ADD f");
+          value -= tmp;
         }
+        commandsToDo.push_back(std::string("PUT ") + registerList[r]); // r_b <- r_a
+        commandsToDo.push_back("GET g"); // r_a <- r_g(saved value)
+        // commandsToDo.push_back(std::string("PUT ") + registerList[r]); // r_c <- result
         break;
-      } else {
-        for(int i = 1; i <= value; i++) {
-          commandsToDo.push_back(std::string("INC ") + registerList[r]);
+      } 
+      else { // new register e not applied
+        commandsToDo.push_back("PUT g"); // r_g <- r_a
+        commandsToDo.push_back(std::string("GET ") + registerList[r]); // r_a <- r_b
+
+        while(value > 0) {
+          if(value == 1) { // Warunek stopu while
+            commandsToDo.push_back("INC a");
+            // commandsToDo.push_back(std::string("INC ") + registerList[r]);
+            break;
+          }
+          if(value <= 4) {
+            for(int i = 1; i <= value; i++) {
+              commandsToDo.push_back("INC a");
+              // commandsToDo.push_back(std::string("INC ") + registerList[r]);
+            }
+            break;
+          }
+          long long tmp = 1;
+          commandsToDo.push_back("RST f");
+          commandsToDo.push_back("INC f");
+          while(tmp * 2 <= value) {
+            commandsToDo.push_back("SHL f"); // r_f <- 2 * r_f
+            tmp *= 2;
+          }
+          commandsToDo.push_back("ADD f"); // r_a += r_f
+          value -= tmp;
         }
+        commandsToDo.push_back(std::string("PUT ") + registerList[r]); // r_b <- r_a
+        commandsToDo.push_back("GET g"); // r_a <- r_g
         break;
       }
     }
 
-    else if(registerList[r] == 'a' && value_2_reg_2 * 2 > value) {
+    if(registerList[r] == 'a' && value_2_reg_2 * 2 > value) {
       if(isNewRegisterApplied) {
         commandsToDo.push_back(std::string("ADD e")); // r_a <- r_a + r_e
       }
-      for(int i = 1; i <= value; i++) {
-        commandsToDo.push_back(std::string("INC a"));
+      while(value > 0) {
+        if(value == 1) { // Warunek stopu while
+          commandsToDo.push_back("INC a");
+          break;
+        }
+        if(value <= 4) {
+          for(int i = 1; i <= value; i++) {
+            commandsToDo.push_back("INC a");
+          }
+          break;
+        }
+        long long tmp = 1;
+        commandsToDo.push_back("RST f");
+        commandsToDo.push_back("INC f");
+        while(tmp * 2 <= value) {
+          commandsToDo.push_back("SHL f"); // r_f <- 2 * r_f
+          tmp *= 2;
+        }
+        commandsToDo.push_back("ADD f");
+        value -= tmp;
       }
       break;
-    } 
+    }
   }
 
   for(auto command : commandsToDo) {
@@ -241,7 +312,10 @@ void Compiler::add_machine_command(std::string wholeCommand) { // Command like L
     clear_register_value();
   } else if(command == "STRK") {
     registers[registerList.find(reg)] = getCommandsNumber();
-  } else if(command == "HALT") {
+  } else if(command == "JUMPR") {
+    clear_register_value();
+  }
+  else if(command == "HALT") {
     // Zakończenie programu
   }
 
@@ -356,16 +430,16 @@ int Compiler::getIndex(const char *s) {
       break;
     }
   }
+  std::cout << "Index is " << res << std::endl;
   return res;
 }
 
 void Compiler::add_procedure(const char *s) {
   std::vector<std::pair<int, bool>> index;
   for(size_t i = 0; i < declarationList.size(); ++i) {
-    index.push_back(std::make_pair(declarationList[i].second, procedure_arguments[i]));
+    index.push_back(std::make_pair(declarationList[i].second, procedure_args[i]));
   }
-
-  procedure_arguments.clear();
+  procedure_args.clear();
   procedures.push_back(std::make_pair(s, index));
 }
 
@@ -377,6 +451,50 @@ std::vector<std::pair<int, bool>> Compiler::get_procedure_args(const char *s) {
   }
   yyerror((std::string("Undefined procedure ") + s).c_str());
   return std::vector<std::pair<int, bool>>();
+}
+
+void Compiler::add_beginning_procedure(const char *s, int i) {
+  beginning_procedure.push_back(std::make_pair(s, i));
+}
+
+int Compiler::get_beginning_procedure(const char *s) {
+  for(auto& entry : beginning_procedure) {
+    if(strcmp(entry.first, s) == 0) {
+      return entry.second;
+    }
+  }
+  yyerror((std::string("Undefined procedure ") + s).c_str());
+  return -1;
+}
+
+int Compiler::get_beginning_next_procedure(const char *s) { // poczatek kolejnej procedury
+  auto it = std::find_if(beginning_procedure.begin(), beginning_procedure.end(), [s](const auto &entry) {
+    return strcmp(entry.first, s) == 0; });
+  if(it != beginning_procedure.end() && std::next(it) != beginning_procedure.end()) {
+    return std::next(it)->second;
+  }
+
+  return -1;
+}
+
+int Compiler::size_args_procedure(const char *s) {
+  for(const auto& entry : procedures) {
+    if(strcmp(entry.first, s) == 0) {
+      return entry.second.size();
+    }
+  }
+  yyerror((std::string("Undefined procedure ") + s).c_str());
+  return -1;
+}
+
+bool Compiler::is_Tab(const char *s) {
+  std::cout << " ssik " << s << std::endl;
+  size_t len = strlen(s);
+  std::cout << len << " len" << std::endl;
+  if(len > 2 && s[len - 2] == '[' && s[len - 1] == ']') { // Ostatnie dwa znaki to nawiasy kwadratowe, co sugeruje tablicę.
+    return true;
+  }
+  return false;
 }
 
 // JUMP 32, 24
@@ -393,7 +511,6 @@ void Compiler::add_commands_inside(const std::string s, int i) {
     else if(command.substr(0, 5) == "JZERO" && command.size() > 6) { // 
       int liczba;
       std::istringstream(command.substr(6)) >> liczba;
-      std::cout << "Liczba to " << liczba << std::endl;
       if(liczba > i + 1) { // 25 > 24 + 1
         command = command.substr(0, 6) + std::to_string(liczba + 1);
       }

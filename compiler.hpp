@@ -19,7 +19,7 @@ class Compiler {
     std::string registerList = "abcdefgh";
     std::vector<const char *> arguments;
     std::vector<std::pair<int, int>> function_arguments;
-    std::vector<bool> procedure_arguments;
+    std::vector<bool> procedure_args;
 
     void add_declaration(const char *s, int size);
     int get_declaration(const char *s);
@@ -33,26 +33,26 @@ class Compiler {
     void add_machine_command(std::string s);
     void change_command(std::string s, int i, int number);
     void get_register_value(int num, const char *str, const char *str1, int registerNum);
-    void get_value_from_register(int num);
     void clear_register_value();
+    void add_commands_inside(const std::string s, int position);
 
     int getCommandsNumber();
     std::vector<std::string> getCommands();
     void clearCommands();
   
-    bool get_variable_initialization(const char *s);
-    void check_var_initialization(long long num, const char *var, const char *T);
+    bool get_variable_initialization(const char *s); // not done
+    void check_var_initialization(long long num, const char *var, const char *T); // not done
 
-    void add_procedure();
-    int get_beginning_procedure();
-    void add_commands_inside(const std::string s, int position);
-
-    int getIndex(const char *s);
     void add_procedure(const char *s);
     std::vector<std::pair<int, bool>> get_procedure_args(const char *s);
+    int getIndex(const char *s);
+    void add_beginning_procedure(const char *s, int i); // not done
+    int get_beginning_procedure(const char *s); // not done
+    int get_beginning_next_procedure(const char *s); // not done
+    int size_args_procedure(const char *s); // not done
+    bool is_Tab(const char *s); // not done
 
     bool checkLastCommand(std::string s);
-    bool is_Tab(const char *s);
 };  
 
 

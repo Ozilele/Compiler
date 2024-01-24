@@ -2,13 +2,13 @@
 PROCEDURE check(n,d,p) IS
   r
 IN
-    p:=0;
+  p:=0;
+  r:=n%d;
+  WHILE r=0 DO
+    n:=n/d;
+    p:=p+1;
     r:=n%d;
-    WHILE r=0 DO
-        n:=n/d;
-        p:=p+1;
-        r:=n%d;
-    ENDWHILE
+  ENDWHILE
 END
 
 PROGRAM IS

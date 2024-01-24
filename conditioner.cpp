@@ -361,7 +361,7 @@ void Conditioner::less(long long num1, const char *str1, const char *str1_1, lon
   }
 }
 
-// Implemented and tested
+// Implemented and tested chyba ok
 void Conditioner::greater_equal(long long num1, const char *str1, const char *str1_1, long long num2, const char *str2, const char *str2_2) {
   int counter = 0;
   long long result;
@@ -409,6 +409,7 @@ void Conditioner::greater_equal(long long num1, const char *str1, const char *st
         }
         compiler->add_machine_command("INC a");
         compiler->add_machine_command("JZERO "); // jump if r_a > 0
+        compiler->add_machine_command("DEC a");
       } else { // n >= 5
         compiler->set_number(result, 2); // r_c -> result
         compiler->get_register_value(variable_num, var, var_s, 1);
@@ -422,6 +423,7 @@ void Conditioner::greater_equal(long long num1, const char *str1, const char *st
         compiler->add_machine_command("INC a");
         compiler->add_machine_command("SUB c"); // n - result
         compiler->add_machine_command("JZERO "); // jump if r_a = 0
+        compiler->add_machine_command("DEC a");
       }
       break;
     case 2: // n >= p
@@ -433,7 +435,7 @@ void Conditioner::greater_equal(long long num1, const char *str1, const char *st
           compiler->add_machine_command("LOAD b");
         }
       }
-      compiler->add_machine_command("PUT c"); // r_c <- p
+      compiler->add_machine_command("PUT c"); // r_c <- r_a(p)
       compiler->get_register_value(num1, str1, str1_1, 3);
       if(!compiler->checkLastCommand("STORE d")) {
         if(compiler->checkLastCommand("LOAD d")) {
@@ -445,11 +447,12 @@ void Conditioner::greater_equal(long long num1, const char *str1, const char *st
       compiler->add_machine_command("INC a");
       compiler->add_machine_command("SUB c"); // n - p
       compiler->add_machine_command("JZERO "); // jump if r_a = 0
+      compiler->add_machine_command("DEC a");
       break;
   }
 }
 
-// Implemented and tested
+// Implemented and tested chyba git
 void Conditioner::less_equal(long long num1, const char *str1, const char *str1_1, long long num2, const char *str2, const char *str2_2) {
   int counter = 0;
   long long result;
@@ -506,11 +509,12 @@ void Conditioner::less_equal(long long num1, const char *str1, const char *str1_
             compiler->add_machine_command("LOAD b");
           }
         }
-        compiler->add_machine_command("PUT d"); // r_d <- n
-        compiler->add_machine_command("GET c"); // r_a <- result
+        compiler->add_machine_command("PUT d"); // r_d <- n(i)
+        compiler->add_machine_command("GET c"); // r_a <- result(111110)
         compiler->add_machine_command("INC a");
         compiler->add_machine_command("SUB d"); // result - n
         compiler->add_machine_command("JZERO "); // jump if r_a = 0
+        compiler->add_machine_command("DEC a");
       }
       break;
     case 2: // n <= p
@@ -535,6 +539,7 @@ void Conditioner::less_equal(long long num1, const char *str1, const char *str1_
       compiler->add_machine_command("INC a");
       compiler->add_machine_command("SUB c"); // p - n
       compiler->add_machine_command("JZERO "); // jump if r_a = 0
+      compiler->add_machine_command("DEC a");
       break;
   }
 }

@@ -1,0 +1,16 @@
+PROGRAM IS
+    n,m,potega,dzielnik
+IN
+    READ n;
+    dzielnik:=2;
+    m:=dzielnik*dzielnik;
+    WHILE n>=m DO
+        check(n,dzielnik,potega);
+        IF potega>0 THEN # jest podzielna przez dzielnik
+            WRITE dzielnik;
+            WRITE potega;
+        ENDIF
+        dzielnik:=dzielnik+1;
+        m:=dzielnik*dzielnik;
+    ENDWHILE
+END

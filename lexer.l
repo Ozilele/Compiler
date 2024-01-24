@@ -4,7 +4,6 @@
 #include <iostream>
 #include "parser.hpp"
 
-
 extern int yylex();
 %}
 
@@ -55,9 +54,9 @@ WHILE         { return T_WHILE; }
 DO            { return T_DO; }
 ENDWHILE      { return T_ENDWHILE; }
 
-IF            { return T_IF; }
-THEN          { return T_THEN; }
-ELSE          { return T_ELSE; }
+IF            {  return T_IF; }
+THEN          {  return T_THEN; }
+ELSE          {  return T_ELSE; }
 ENDIF         { return T_ENDIF; }
 
 \[            { return T_LEFT_BRACKET; }

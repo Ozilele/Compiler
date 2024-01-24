@@ -4,4 +4,4 @@ main: parser.y lexer.l
 		g++ -o kompilator -std=c++17 -O3 main.cpp parser.cpp lexer.cpp compiler.cpp assembler_generator.cpp conditioner.cpp
 
 clean:
-	rm parser.c parser.h lexer.c kompilator
+	rm -f parser.cpp parser.hpp lexer.cpp kompilator

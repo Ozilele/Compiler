@@ -89,4 +89,9 @@
           // compiler->add_machine_command("DEC a");
           // compiler->change_command(std::to_string(compiler->getCommandsNumber()), num_, 1);
 
-
+             // for(int i = 1; i <= value; i++) {
+        //   commandsToDo.push_back(std::string("INC a"));
+        // }
+        // for(int i = 1; i <= value; i++) {
+        //   commandsToDo.push_back(std::string("INC ") + registerList[r]);
+        // }

@@ -359,6 +359,7 @@ void AssemblerGenerator::divide(long long num1, const char *str_, const char *st
           }
         }
       }
+
       else { 
         if(u == 1) { // case when n/5(result is the divisor)
 
@@ -374,7 +375,7 @@ void AssemblerGenerator::divide(long long num1, const char *str_, const char *st
            compiler->add_machine_command("SHR a");
           }
 
-          else {
+          else { // p/6
             compiler->set_number(result, 2); // r_c <- result // ?
             compiler->add_machine_command("GET c");
             compiler->add_machine_command("PUT e"); // r_e <- r_c
@@ -405,7 +406,6 @@ void AssemblerGenerator::divide(long long num1, const char *str_, const char *st
             compiler->add_machine_command("DEC a");
             long long num_lin_2 = compiler->getCommandsNumber() - 7;
             compiler->add_machine_command("JUMP " + std::to_string(num_lin_2));
-            // compiler->add_machine_command("DEC a");
             compiler->add_machine_command("SHR c"); // discard // r_c = 8(partial dividend)
             compiler->add_machine_command("GET f"); // r_a <- r_f <- 2
             compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 19));
@@ -425,11 +425,17 @@ void AssemblerGenerator::divide(long long num1, const char *str_, const char *st
             compiler->add_machine_command("PUT d"); // r_d <- r_a
             compiler->add_machine_command("INC a");
             compiler->add_machine_command("SUB e");
-            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 4));
+            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 8));
             compiler->add_machine_command("RST f");
             compiler->add_machine_command("JUMP " + std::to_string(jumpEnd));
+            compiler->add_machine_command("GET d");
+            compiler->add_machine_command("INC a");
+            compiler->add_machine_command("SUB c");
+            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 3));
             compiler->add_machine_command("INC g");
             compiler->add_machine_command("GET g"); // result
+            compiler->add_machine_command("JUMP " + std::to_string(compiler->getCommandsNumber() + 2));
+            compiler->add_machine_command("RST a");
             compiler->change_command(std::to_string(compiler->getCommandsNumber()), commStart, 1);
           }
         } 
@@ -439,7 +445,7 @@ void AssemblerGenerator::divide(long long num1, const char *str_, const char *st
           } 
           else {
             compiler->set_number(result, 2); // r_c <- result
-            compiler->add_machine_command("PUT c"); // r_c <- r_a
+            compiler->add_machine_command("GET c"); // r_c <- r_a
             compiler->add_machine_command("PUT e"); // r_e <- r_a
 
             compiler->get_register_value(variable_num, var, var_s, 3);
@@ -613,14 +619,29 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
         var_s = str2;
         u = 2;
       }
-      // n/1 v 1/n
-      if(result == 0 || (u == 1 && result == 1) || (u == 2 && result == 1)) {
+
+      // n % 0 v n % 1
+      if((result == 0 && u == 1) || (result == 1 && u == 1)) {
         compiler->add_machine_command("RST a");
-      } 
+      }
+      else if(result == 0 && u == 2) { // 0 mod p
+        compiler->add_machine_command("RST a");
+      }
+      
+      // else if(result == 0 || (u == 1 && result == 1)) {
+      //   compiler->add_machine_command("RST a");
+      // } 
+      // else if(u == 2 && result == 1) { // 1 % n
+      //   compiler->add_machine_command("RST a");
+      //   compiler->add_machine_command("INC a");
+      // }
       else {
         if(u == 1) { // n mod 2, n mod 5
-          if(result == 2) { // n(mod 2)
+          if(result == 2) { // n(mod 2) -> jest git
             compiler->set_number(result, 2); // r_c <- result
+            compiler->add_machine_command("GET c"); // r_c <- r_a
+            compiler->add_machine_command("PUT c");
+
             compiler->get_register_value(variable_num, var, var_s, 1);
             if(!compiler->checkLastCommand("STORE b")) {
               if(compiler->checkLastCommand("LOAD b")) {
@@ -634,8 +655,11 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
             compiler->add_machine_command("SHL b"); // 
             compiler->add_machine_command("SUB b"); // modulo result
           }
-          else { // n(mod 5) itp.
-            compiler->set_number(result, 2); // r_c <- result
+          else { // n(mod 5) itp. jest git
+            compiler->set_number(result, 2); 
+            compiler->add_machine_command("GET c"); // r_c <- r_a
+            compiler->add_machine_command("PUT c"); // r_c <- r_a
+
             compiler->get_register_value(variable_num, var, var_s, 1);
             if(!compiler->checkLastCommand("STORE b")) {
               if(compiler->checkLastCommand("LOAD b")) {
@@ -644,16 +668,18 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
                 compiler->add_machine_command("LOAD b");
               }
             }
-            compiler->add_machine_command("INC a"); // n+1
+            compiler->add_machine_command("INC a");
             long long jump = compiler->getCommandsNumber();
             compiler->add_machine_command("PUT b"); // r_b = r_a
-            compiler->add_machine_command("SUB c"); //
+            compiler->add_machine_command("SUB c"); // n - p
+            compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 2));
             compiler->add_machine_command("JPOS " + std::to_string(jump));
             compiler->add_machine_command("GET b");
             compiler->add_machine_command("DEC a");
           }
         }
-        else { // 5 mod x
+        else { // 5 mod x jest git
+        std::cout << "HEjo" << std::endl;
           compiler->get_register_value(variable_num, var, var_s, 1);
           if(!compiler->checkLastCommand("STORE b")) {
             if(compiler->checkLastCommand("LOAD b")) {
@@ -666,17 +692,20 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
           compiler->add_machine_command("JZERO ");
           compiler->add_machine_command("PUT b"); // r_b <- r_a(x)
           compiler->set_number(result, 2);
+          compiler->add_machine_command("GET c");
           compiler->add_machine_command("INC a");
+          long long jumpLoop = compiler->getCommandsNumber();
           compiler->add_machine_command("PUT c"); // r_c <- r_a
           compiler->add_machine_command("SUB b");
-          compiler->add_machine_command("JPOS " + std::to_string(compiler->getCommandsNumber() - 2));
+          compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 2));
+          compiler->add_machine_command("JPOS " + std::to_string(jumpLoop));
           compiler->add_machine_command("GET c");
           compiler->add_machine_command("DEC a");
           compiler->change_command(std::to_string(compiler->getCommandsNumber()), jump, 1);
         }
       }
       break;
-    case 2: // n mod p
+    case 2: // n mod p(jest git)
       compiler->get_register_value(num2, str_2, str2, 1); // wczytanie dzielnika
       if(!compiler->checkLastCommand("STORE b")) {
         if(compiler->checkLastCommand("LOAD b")) {
@@ -706,7 +735,7 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
       // compiler->add_machine_command("GET c"); // r_a <- r_c
       compiler->add_machine_command("INC a");
       compiler->add_machine_command("SUB g");
-      compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 37));
+      compiler->add_machine_command("JZERO " + std::to_string(compiler->getCommandsNumber() + 38));
       compiler->add_machine_command("RST h");
       compiler->add_machine_command("RST d");
       compiler->add_machine_command("RST f"); // counter;
@@ -746,6 +775,8 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
       compiler->add_machine_command("JUMP " + std::to_string(jumpEnd));
       compiler->add_machine_command("GET e"); // r_a <- r_e(n)
       compiler->add_machine_command("SUB d"); // r_a <- result of modulo
+      compiler->add_machine_command("JUMP " + std::to_string(compiler->getCommandsNumber() + 2));
+      compiler->add_machine_command("GET c"); // r_a <- r_c
       compiler->change_command(std::to_string(compiler->getCommandsNumber()), jumpStartSecond, 1);
       compiler->change_command(std::to_string(compiler->getCommandsNumber()), jumpStartFirst, 1); 
       break;
@@ -755,8 +786,11 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
 // Done and tested
 void AssemblerGenerator::get_number(long long num, const char *str, const char *str1) {
   if(strcmp(str, "") == 0 && strcmp(str1, "") == 0) { // case when normal number
+    compiler->add_machine_command("RST a");
     compiler->set_number(num, 0);
   } else {
+    std::cout << num << ", " << str << std::endl;
+    compiler->add_machine_command("RST b");
     compiler->get_register_value(num, str, str1, 1);
     if(!compiler->checkLastCommand("STORE b")) {
       if(compiler->checkLastCommand("LOAD b")) {

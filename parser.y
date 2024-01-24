@@ -74,12 +74,12 @@ program_all:
 
 start_main:
   {
-    // compiler.add_beginning_procedure("", compiler.getCommandsNumber());
-    // if(compiler.getCommandsNumber() == 1) {
-    //   compiler.clearCommands();
-    // } else {
-    //   compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1);
-    // }
+    compiler.add_beginning_procedure("", compiler.getCommandsNumber());
+    if(compiler.getCommandsNumber() == 1) {
+      compiler.clearCommands();
+    } else {
+      compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1);
+    }
   }
 
 procedures:
@@ -91,9 +91,16 @@ procedures:
         compiler.clear_register_value();
       }
       | procedures T_PROCEDURE proc_head T_IS T_IN commands T_END {
-
+        compiler.set_number(compiler.get_declaration(" RETURN"), 1);
+        compiler.add_machine_command("LOAD b");
+        compiler.clear_declaration();
+        compiler.add_machine_command("JUMPR a");
+        compiler.clear_register_value();
       }
-      | {}
+      | {
+        // std::cout << " Nie ma procedur " << std::endl;
+        compiler.add_machine_command("JUMP ");
+      }
 ;
 
 main:
@@ -120,10 +127,29 @@ commands:
 
 command:
       identifier T_ASSIGN expression T_SEMICOLON { // tested
+        bool whether = false;
+        for(auto i : compiler.function_arguments) {
+          if((i.first <= compiler.get_declaration($1.str) && compiler.get_declaration($1.str) < i.second) || (i.first <= compiler.get_declaration($1.str1) && compiler.get_declaration($1.str1) < i.second)) {
+            compiler.add_machine_command("PUT h");
+            whether = true;
+            break;
+          }
+        }
+
+        if(whether == false && $1.num == -1) { // case T[a] := ...
+          compiler.add_machine_command("PUT h");
+          whether = true;
+        }
+
         compiler.check_declaration($1.num, $1.str, $1.str1); // check if variable was declared
+        compiler.add_machine_command("RST b");
         compiler.get_register_value($1.num, $1.str, $1.str1, 1);
+
+        if(whether) {
+          compiler.add_machine_command("PUT b"); // r_b <- r_a
+          compiler.add_machine_command("GET h"); // r_a <- r_h
+        }
         compiler.add_machine_command("STORE b");
-        // change_var_initialization
         compiler.set_variable_initialization($1.str);
         $$ = compiler.getCommandsNumber();
       }
@@ -131,13 +157,12 @@ command:
         std::cout << $5 << ", if scope" << std::endl;
         std::cout << $3  << ", cond scope " << std::endl;
         std::cout << $8 << ", else scope" << std::endl;
-        compiler.change_command(std::to_string($5 + 1), $3, 1);
-        compiler.add_commands_inside("JUMP " + std::to_string($8 + 1), $5); // method which adds jump when the if ends so that else block will not be completed
+        compiler.change_command(std::to_string($5 + 1), $3, 1); // albo $3 -1
+        compiler.add_commands_inside("JUMP " + std::to_string($8 + 1), $5); // method which adds jump when the if ends so that else block will not be completedx
         $$ = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
       | start T_IF condition T_THEN commands T_ENDIF { // tested
-        // commands is the body of if
         // $5 is the number of line where the scope of this if ends, $3 is the number of line where the condition of if ends
         std::cout << $5 << ", ifik" << std::endl;
         std::cout << $3 << ", cond" << std::endl;
@@ -146,6 +171,7 @@ command:
         compiler.clear_register_value();
       }
       | start T_WHILE condition T_DO commands T_ENDWHILE { // tested
+        std::cout << $3 << ", cond while" << std::endl;
         std::cout << std::to_string(compiler.getCommandsNumber() + 1) << " command nr" << std::endl;
         // $3 to koniec warunku condition, $1 to numer linii od ktorej zaczyna sie petla while
         compiler.change_command(std::to_string(compiler.getCommandsNumber() + 1), $3, 1); // dodanie wartosci jumpa w przypadku niespelnienia condition
@@ -167,6 +193,7 @@ command:
         compiler.get_register_value($2.num, $2.str, $2.str1, 1);
         compiler.add_machine_command("STORE b"); // p_rb <- ra
         // change_variable_initialization
+        // compiler.set_variable_initialization($2.str);
         $$ = compiler.getCommandsNumber();
       }
       | T_WRITE value T_SEMICOLON { // tested
@@ -192,22 +219,59 @@ start:
       $$ = compiler.getCommandsNumber();
       compiler.clear_register_value();
     }
+;
 
 proc_head:
       T_IDENTIFIER T_LEFTPARENTHESIS args_decl T_RIGHTPARENTHESIS {
-        // compiler.add_beginning_procedure($1, compiler.getCommandsNumber());
-        // compiler.add_declaration(" RETURN", 1);
-        // compiler.add_procedure($1);
-        // int min = compiler.get_first_declaration();
-        // int max = compiler.get_declaration(" RETURN");
-        // compiler.function_arguments.push_back(std::make_pair(min, max));
+        std::cout << "Procedure name: " << $1 << std::endl;
+        compiler.add_beginning_procedure($1, compiler.getCommandsNumber());
+        compiler.add_declaration(" RETURN", 1);
+        compiler.add_procedure($1);
+        int min = compiler.get_first_declaration();
+        int max = compiler.get_declaration(" RETURN"); // zakres komorek pamieci ktore sa zarezerwowane dla procedury
+        std::cout << "func args " << min << ", " << max << std::endl;
+        compiler.function_arguments.push_back(std::make_pair(min, max));
       }
 ;
 
 proc_call:
       T_IDENTIFIER T_LEFTPARENTHESIS args T_RIGHTPARENTHESIS {
-        // TODO -> procedure call
+        if(compiler.size_args_procedure($1) - 1 != compiler.arguments.size()) {
+          if(compiler.size_args_procedure($1) == -1) {
+            yyerror((std::string("Undefined procedure ") + $1).c_str());
+          }
+          yyerror((std::string("Invalid procedure params ") + $1).c_str());
+        }
+        if(compiler.getCommandsNumber() < compiler.get_beginning_next_procedure($1) || compiler.get_beginning_next_procedure($1) == -1) {
+          yyerror((std::string("Invalid procedure use ") + $1).c_str());
+        }
 
+        std::vector<std::pair<int, bool>> args = compiler.get_procedure_args($1);
+
+        for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
+          compiler.set_variable_initialization(compiler.arguments[i]);
+          std::cout << "Param to procedure " << compiler.arguments[i] << std::endl;
+          if(args[i].second == 1) {
+            if(!compiler.is_Tab(compiler.arguments[i])) {
+              yyerror((std::string("Invalid procedure params ") + $1).c_str());
+            }
+          }
+          compiler.get_register_value(0, compiler.arguments[i], nullptr, 0); // r_a <- 
+          compiler.set_number(compiler.getIndex($1), 1);
+          compiler.add_machine_command("STORE b");
+          compiler.add_machine_command("RST a");
+        }
+
+        compiler.set_number(compiler.getIndex($1), 1);
+        compiler.add_machine_command("RST a");
+        compiler.add_machine_command("INC a");
+        compiler.add_machine_command("SHL a");
+        compiler.add_machine_command("SHL a");
+        compiler.add_machine_command("STRK c");
+        compiler.add_machine_command("ADD c");
+        compiler.add_machine_command("STORE b");
+        compiler.add_machine_command("JUMP " + std::to_string(compiler.get_beginning_procedure($1))); // jump to the line in which procedure starts
+        compiler.arguments.clear();
       }
 ;
 
@@ -221,31 +285,30 @@ declarations:
       | T_IDENTIFIER {
         compiler.add_declaration($1, 1);
       }
-      | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // t[]
-        std::cout << "Hejo " << std::endl;
+      | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[]
         compiler.add_declaration($1, $3);
       }
 ;
 
 args_decl:
-      args_decl T_COMMA T_IDENTIFIER {
+      args_decl T_COMMA T_IDENTIFIER { // args_decl, x
         // parametry definiowane w procedurze proc_name(a, b, c)
-        compiler.procedure_arguments.push_back(false);
+        compiler.procedure_args.push_back(false);
         compiler.add_declaration($3, 1);
         compiler.set_variable_initialization($3);
       }
-      | args_decl T_COMMA T T_IDENTIFIER {
-        compiler.procedure_arguments.push_back(true);
+      | args_decl T_COMMA T T_IDENTIFIER { // args_decl, T x
+        compiler.procedure_args.push_back(true);
         compiler.add_declaration($4, 1);
         compiler.set_variable_initialization($4);
       }
       | T_IDENTIFIER { // variable
-        compiler.procedure_arguments.push_back(false);
+        compiler.procedure_args.push_back(false);
         compiler.add_declaration($1, 1);
         compiler.set_variable_initialization($1);
       }
       | T T_IDENTIFIER {
-        compiler.procedure_arguments.push_back(true);
+        compiler.procedure_args.push_back(true);
         compiler.add_declaration($2, 1);
         compiler.set_variable_initialization($2);
       }
@@ -254,7 +317,7 @@ args_decl:
 args:
     args T_COMMA T_IDENTIFIER {
       // procedure call
-      compiler.arguments.push_back($3);
+      compiler.arguments.push_back($3); // dodanie przekazanych procedurze parametrów
     }
     | T_IDENTIFIER {
       compiler.arguments.push_back($1);
@@ -395,6 +458,7 @@ identifier:
 %%
 
 void yyerror(const char* const message) {
+  std::cout << "CO tam " << std::endl;
   std::cout << "Error: " <<  message << std::endl;
   exit(1);
 }

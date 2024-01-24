@@ -4,9 +4,12 @@ STORE b
 RST b
 LOAD b
 SHR a
+RST b
 INC b
 STORE b
 SHL a
+RST b
+INC b
 STORE b
 RST b
 INC b
@@ -15,16 +18,17 @@ PUT c
 RST d
 LOAD d
 SUB c
-JZERO 22
+JZERO 25
 RST a
 INC a
 WRITE
-JUMP 24
+JUMP 27
 RST a
 WRITE
 RST b
 LOAD b
 SHR a
+RST b
 RST b
 STORE b
 RST b

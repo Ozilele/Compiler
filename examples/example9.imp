@@ -26,10 +26,10 @@ IN
 END
 
 PROGRAM IS
-    n,k,w
+  n,k,w
 IN
-    READ n;
-    READ k;
-    bc(n,k,w);
-    WRITE w;
+  READ n;
+  READ k;
+  bc(n,k,w);
+  WRITE w;
 END
