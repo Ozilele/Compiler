@@ -41,6 +41,7 @@ void Compiler::clear_declaration() {
 
 void Compiler::get_register_value(int num, const char *str, const char *str1, int registerNum) {
   if(num == -1) { // case when access T[a]
+    std::cout << str << ", " << str1 << std::endl;
     set_number(get_declaration(str), 1);
     for(auto arg : function_arguments) {
       if(arg.first <= get_declaration(str) && get_declaration(str) < arg.second) {
@@ -61,6 +62,7 @@ void Compiler::get_register_value(int num, const char *str, const char *str1, in
     add_machine_command(std::string("PUT ") + registerList[registerNum]);
   }
   else { // case when access variable a,x or T[2] itd.
+    // std::cout << "decl " << get_declaration(str) << std::endl;
     set_number(get_declaration(str) + num, registerNum);
     for(auto arg : function_arguments) {
       if(arg.first <= get_declaration(str) && get_declaration(str) < arg.second) {
@@ -69,7 +71,6 @@ void Compiler::get_register_value(int num, const char *str, const char *str1, in
         break;
       }
     }
-
   }
 };
 
@@ -79,6 +80,10 @@ void Compiler::set_number(long long value, int r) {
   bool isNewRegisterApplied = false;
   long long value_2_reg_1 = 1;
   long long value_2_reg_2 = 1;
+
+  if(value == registers[r]) {
+    return;
+  }
   
   if(value == 0 && registers[r] != -1) {
     add_machine_command(std::string("RST ") + registerList[r]);
@@ -121,8 +126,9 @@ void Compiler::set_number(long long value, int r) {
     }
 
     if(value_2_reg_1 * 2 < value) {
-      command = std::string("INC ") + registerList[r];
-      commandsToDo.push_back(command);
+      if(registers[r] != 1) {
+        commandsToDo.push_back(std::string("INC ") + registerList[r]);
+      }
       long long oldValue = value;
       while(value_2_reg_1 * 2 <= oldValue) {
         command = std::string("SHL ") + registerList[r];
@@ -179,7 +185,6 @@ void Compiler::set_number(long long value, int r) {
         }
         commandsToDo.push_back(std::string("PUT ") + registerList[r]); // r_b <- r_a
         commandsToDo.push_back("GET g"); // r_a <- r_g(saved value)
-        // commandsToDo.push_back(std::string("PUT ") + registerList[r]); // r_c <- result
         break;
       } 
       else { // new register e not applied
@@ -189,13 +194,11 @@ void Compiler::set_number(long long value, int r) {
         while(value > 0) {
           if(value == 1) { // Warunek stopu while
             commandsToDo.push_back("INC a");
-            // commandsToDo.push_back(std::string("INC ") + registerList[r]);
             break;
           }
           if(value <= 4) {
             for(int i = 1; i <= value; i++) {
               commandsToDo.push_back("INC a");
-              // commandsToDo.push_back(std::string("INC ") + registerList[r]);
             }
             break;
           }
@@ -422,7 +425,7 @@ int Compiler::getIndex(const char *s) {
   int res = -1;
   for(auto i : procedures) {
     if(strcmp(i.first, s) == 0) {
-      res = i.second[procedure_index].first;
+      res = i.second[procedure_index].first + 1;
       procedure_index++;
       if(procedure_index == i.second.size()) {
         procedure_index = 0;
@@ -430,7 +433,6 @@ int Compiler::getIndex(const char *s) {
       break;
     }
   }
-  std::cout << "Index is " << res << std::endl;
   return res;
 }
 

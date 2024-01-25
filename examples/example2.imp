@@ -6,12 +6,12 @@
 PROCEDURE pc(a,b) IS
 IN
   a:=a+b;
-  b:=a-b;
 END
 
 PROCEDURE pd(a,b) IS
 IN
-  pc(a,b);
+  WRITE a;
+  WRITE b;
 END
 
 PROGRAM IS

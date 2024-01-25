@@ -70,13 +70,13 @@ void AssemblerGenerator::add(long long num1, const char *str_, const char *str1,
         }
       }
       compiler->add_machine_command("PUT c"); // r_c <- r_a
-      compiler->get_register_value(num2, str_2, str2, 1);
 
-      if(!compiler->checkLastCommand("STORE b")) {
-        if(compiler->checkLastCommand("LOAD b")) {
+      compiler->get_register_value(num2, str_2, str2, 3);
+      if(!compiler->checkLastCommand("STORE d")) {
+        if(compiler->checkLastCommand("LOAD d")) {
           compiler->add_machine_command("LOAD a");
         } else {
-          compiler->add_machine_command("LOAD b");
+          compiler->add_machine_command("LOAD d");
         }
       }
       compiler->add_machine_command("ADD c"); // ra <- ra + r_c
@@ -128,10 +128,9 @@ void AssemblerGenerator::subtract(long long num1, const char *str_, const char *
         }
       }
       else {
-        if(strcmp(str_, "") != 0) {
+        if(strcmp(str_, "") != 0) { // n - 2
           compiler->set_number(result, 2); // r_c <- result
           compiler->get_register_value(variable_num, var, var_s, 1);
-
           if(!compiler->checkLastCommand("STORE b")) {
             if(compiler->checkLastCommand("LOAD b")) {
               compiler->add_machine_command("LOAD a");
@@ -168,12 +167,13 @@ void AssemblerGenerator::subtract(long long num1, const char *str_, const char *
       }
 
       compiler->add_machine_command("PUT c"); // r_c <- ra
-      compiler->get_register_value(num1, str_, str1, 1);
-      if(!compiler->checkLastCommand("STORE b")) {
-        if(compiler->checkLastCommand("LOAD b")) {
+      compiler->get_register_value(num1, str_, str1, 3);
+
+      if(!compiler->checkLastCommand("STORE d")) {
+        if(compiler->checkLastCommand("LOAD d")) {
           compiler->add_machine_command("LOAD a");
         } else {
-          compiler->add_machine_command("LOAD b");
+          compiler->add_machine_command("LOAD d");
         }
       }
       compiler->add_machine_command("SUB c"); // r_a <- r_a - r_c
@@ -258,16 +258,16 @@ void AssemblerGenerator::multiply(long long num1, const char *str_, const char *
       }
       break;
     case 2: // n * p()
-      compiler->get_register_value(num2, str_2, str2, 3);
-      if(!compiler->checkLastCommand("STORE d")) {
-        if(compiler->checkLastCommand("LOAD d")) {
+      compiler->get_register_value(num2, str_2, str2, 1);
+      if(!compiler->checkLastCommand("STORE b")) {
+        if(compiler->checkLastCommand("LOAD b")) {
           compiler->add_machine_command("LOAD a");
         } else {
-          compiler->add_machine_command("LOAD d"); // r_a <- p_rd
+          compiler->add_machine_command("LOAD b"); // r_a <- p_rd
         }
       }
       compiler->add_machine_command("PUT c"); // r_c <- r_a
-      compiler->add_machine_command("PUT e"); // r_e <- r_a
+      compiler->add_machine_command("PUT g"); // r_e <- r_a
 
       compiler->get_register_value(num1, str_, str1, 3);
       if(!compiler->checkLastCommand("STORE d")) {
@@ -277,7 +277,6 @@ void AssemblerGenerator::multiply(long long num1, const char *str_, const char *
           compiler->add_machine_command("LOAD d"); // r_a <- n
         }
       }
-
       long long num_lin = compiler->getCommandsNumber();
       compiler->add_machine_command("JZERO ");
       compiler->add_machine_command("PUT d");
@@ -292,7 +291,7 @@ void AssemblerGenerator::multiply(long long num1, const char *str_, const char *
       compiler->add_machine_command("GET f");
       compiler->add_machine_command("ADD c");
       compiler->add_machine_command("PUT f");
-      compiler->add_machine_command("GET e");
+      compiler->add_machine_command("GET g");
       compiler->add_machine_command("PUT c");
       compiler->add_machine_command("GET d"); // r_a < r_d
       compiler->add_machine_command("SUB b");
@@ -789,7 +788,6 @@ void AssemblerGenerator::get_number(long long num, const char *str, const char *
     compiler->add_machine_command("RST a");
     compiler->set_number(num, 0);
   } else {
-    std::cout << num << ", " << str << std::endl;
     compiler->add_machine_command("RST b");
     compiler->get_register_value(num, str, str1, 1);
     if(!compiler->checkLastCommand("STORE b")) {

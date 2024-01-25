@@ -1,16 +1,15 @@
 PROGRAM IS
-    n,m,potega,dzielnik
+    n, j
 IN
     READ n;
-    dzielnik:=2;
-    m:=dzielnik*dzielnik;
-    WHILE n>=m DO
-        check(n,dzielnik,potega);
-        IF potega>0 THEN # jest podzielna przez dzielnik
-            WRITE dzielnik;
-            WRITE potega;
-        ENDIF
-        dzielnik:=dzielnik+1;
-        m:=dzielnik*dzielnik;
-    ENDWHILE
+    j:=2;
+    n:=j*n;
+    IF n>=5 THEN
+        j:=j*4;
+        n:=n+j;
+    ELSE
+        n:=n%j;
+        n:=n+j;
+    ENDIF
+    WRITE n;
 END

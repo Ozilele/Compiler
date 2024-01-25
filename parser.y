@@ -142,7 +142,6 @@ command:
         }
 
         compiler.check_declaration($1.num, $1.str, $1.str1); // check if variable was declared
-        compiler.add_machine_command("RST b");
         compiler.get_register_value($1.num, $1.str, $1.str1, 1);
 
         if(whether) {
@@ -150,6 +149,7 @@ command:
           compiler.add_machine_command("GET h"); // r_a <- r_h
         }
         compiler.add_machine_command("STORE b");
+        compiler.add_machine_command("RST b");
         compiler.set_variable_initialization($1.str);
         $$ = compiler.getCommandsNumber();
       }
@@ -247,7 +247,7 @@ proc_call:
         }
 
         std::vector<std::pair<int, bool>> args = compiler.get_procedure_args($1);
-
+        
         for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
           compiler.set_variable_initialization(compiler.arguments[i]);
           std::cout << "Param to procedure " << compiler.arguments[i] << std::endl;
@@ -257,6 +257,9 @@ proc_call:
             }
           }
           compiler.get_register_value(0, compiler.arguments[i], nullptr, 0); // r_a <- 
+          std::cout << " po reg: " << compiler.getIndex($1) << std::endl;
+          // compiler.add_machine_command("RST b");  
+          // std::cout << compiler.get_declaration(compiler.arguments[i]) << " ss" << std::endl;
           compiler.set_number(compiler.getIndex($1), 1);
           compiler.add_machine_command("STORE b");
           compiler.add_machine_command("RST a");
@@ -285,7 +288,7 @@ declarations:
       | T_IDENTIFIER {
         compiler.add_declaration($1, 1);
       }
-      | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[]
+      | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[100]
         compiler.add_declaration($1, $3);
       }
 ;
@@ -317,15 +320,18 @@ args_decl:
 args:
     args T_COMMA T_IDENTIFIER {
       // procedure call
-      compiler.arguments.push_back($3); // dodanie przekazanych procedurze parametrów
+      compiler.arguments.insert(compiler.arguments.begin(), $3);
+      // compiler.arguments.push_back($3); // dodanie przekazanych procedurze parametrów
     }
     | T_IDENTIFIER {
       compiler.arguments.push_back($1);
+      // compiler.arguments.insert(compiler.arguments.begin(), $1);
     }
 ;
 
 expression:
       value {
+        std::cout << $1.num << " val " << std::endl;
         if(strcmp($1.str, "") != 0) {
           compiler.check_declaration($1.num, $1.str, $1.str1);
         }
@@ -432,7 +438,7 @@ identifier:
         $$.str1 = new char[1];
         $$.str1[0] = '\0';
       }
-      | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // T[10]
+      | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[10]
         std::string check = compiler.check_var_declaration($1, true);
         if(check != "") {
           std::cout << check << std::endl;
