@@ -1,15 +1,21 @@
 PROGRAM IS
-    n, j
+    a,b,c,d,pot,wyk,o
 IN
-    READ n;
-    j:=2;
-    n:=j*n;
-    IF n>=5 THEN
-        j:=j*4;
-        n:=n+j;
-    ELSE
-        n:=n%j;
-        n:=n+j;
-    ENDIF
-    WRITE n;
+    READ a;
+    READ b;
+    READ c;
+    d:=1;
+    wyk:=b;
+    pot:=a%c;
+    WHILE wyk>0 DO
+        o:=wyk%2;
+	    IF o=1 THEN
+	        d:=d*pot;
+	        d:=d%c;
+	    ENDIF
+	    wyk:=wyk/2;
+	    pot:=pot*pot;
+	    pot:=pot%c;
+    ENDWHILE
+    WRITE d;
 END

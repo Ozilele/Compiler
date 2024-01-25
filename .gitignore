@@ -1,6 +1,7 @@
-.kompilator
-/parser.cpp
-/parser.hpp
-/lexer.cpp
-/.vscode
+kompilator
+parser.cpp
+parser.hpp
+lexer.cpp
+.vscode/
 out/
+

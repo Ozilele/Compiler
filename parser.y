@@ -78,12 +78,14 @@ start_main:
     if(compiler.getCommandsNumber() == 1) {
       compiler.clearCommands();
     } else {
+      std::cout << " Change command " << compiler.getCommandsNumber() << " " << std::endl;
       compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1);
     }
   }
 
 procedures:
       procedures T_PROCEDURE proc_head T_IS declarations T_IN commands T_END {
+        std::cout << "Procedure decl RETURN " << compiler.get_declaration(" RETURN") << std::endl;
         compiler.set_number(compiler.get_declaration(" RETURN"), 1);
         compiler.add_machine_command("LOAD b");
         compiler.clear_declaration();
@@ -224,7 +226,7 @@ start:
 proc_head:
       T_IDENTIFIER T_LEFTPARENTHESIS args_decl T_RIGHTPARENTHESIS {
         std::cout << "Procedure name: " << $1 << std::endl;
-        compiler.add_beginning_procedure($1, compiler.getCommandsNumber());
+        compiler.add_beginning_procedure($1, compiler.getCommandsNumber()); // dodanie początkowej procedury
         compiler.add_declaration(" RETURN", 1);
         compiler.add_procedure($1);
         int min = compiler.get_first_declaration();
@@ -236,12 +238,12 @@ proc_head:
 
 proc_call:
       T_IDENTIFIER T_LEFTPARENTHESIS args T_RIGHTPARENTHESIS {
-        if(compiler.size_args_procedure($1) - 1 != compiler.arguments.size()) {
-          if(compiler.size_args_procedure($1) == -1) {
-            yyerror((std::string("Undefined procedure ") + $1).c_str());
-          }
-          yyerror((std::string("Invalid procedure params ") + $1).c_str());
-        }
+        // if(compiler.size_args_procedure($1) - 1 != compiler.arguments.size()) {
+        //   if(compiler.size_args_procedure($1) == -1) {
+        //     yyerror((std::string("Undefined procedure ") + $1).c_str());
+        //   }
+        //   yyerror((std::string("Invalid procedure params ") + $1).c_str());
+        // }
         if(compiler.getCommandsNumber() < compiler.get_beginning_next_procedure($1) || compiler.get_beginning_next_procedure($1) == -1) {
           yyerror((std::string("Invalid procedure use ") + $1).c_str());
         }
@@ -251,16 +253,16 @@ proc_call:
         for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
           compiler.set_variable_initialization(compiler.arguments[i]);
           std::cout << "Param to procedure " << compiler.arguments[i] << std::endl;
-          if(args[i].second == 1) {
-            if(!compiler.is_Tab(compiler.arguments[i])) {
-              yyerror((std::string("Invalid procedure params ") + $1).c_str());
-            }
-          }
+          // if(args[i].second) { // procedure arg is an array
+          //   if(!compiler.is_Tab(compiler.arguments[i])) {
+          //     yyerror((std::string("Invalid procedure params ") + $1).c_str());
+          //   }
+          // }
           compiler.get_register_value(0, compiler.arguments[i], nullptr, 0); // r_a <- 
-          std::cout << " po reg: " << compiler.getIndex($1) << std::endl;
-          // compiler.add_machine_command("RST b");  
+          // std::cout << " po reg: " << compiler.getIndex($1) << std::endl;
+          compiler.add_machine_command("RST b");  
           // std::cout << compiler.get_declaration(compiler.arguments[i]) << " ss" << std::endl;
-          compiler.set_number(compiler.getIndex($1), 1);
+          compiler.set_number(compiler.getIndex($1), 1); // r_b <- compiler.getIndex()
           compiler.add_machine_command("STORE b");
           compiler.add_machine_command("RST a");
         }
@@ -270,7 +272,7 @@ proc_call:
         compiler.add_machine_command("INC a");
         compiler.add_machine_command("SHL a");
         compiler.add_machine_command("SHL a");
-        compiler.add_machine_command("STRK c");
+        compiler.add_machine_command("STRK c"); // r_c <- k(command Number)
         compiler.add_machine_command("ADD c");
         compiler.add_machine_command("STORE b");
         compiler.add_machine_command("JUMP " + std::to_string(compiler.get_beginning_procedure($1))); // jump to the line in which procedure starts
@@ -294,8 +296,8 @@ declarations:
 ;
 
 args_decl:
-      args_decl T_COMMA T_IDENTIFIER { // args_decl, x
-        // parametry definiowane w procedurze proc_name(a, b, c)
+      args_decl T_COMMA T_IDENTIFIER {
+        // parametry definiowane w deklaracji procedury proc_name(a, b, c)
         compiler.procedure_args.push_back(false);
         compiler.add_declaration($3, 1);
         compiler.set_variable_initialization($3);
@@ -310,7 +312,7 @@ args_decl:
         compiler.add_declaration($1, 1);
         compiler.set_variable_initialization($1);
       }
-      | T T_IDENTIFIER {
+      | T T_IDENTIFIER { // array
         compiler.procedure_args.push_back(true);
         compiler.add_declaration($2, 1);
         compiler.set_variable_initialization($2);
@@ -319,9 +321,9 @@ args_decl:
 
 args:
     args T_COMMA T_IDENTIFIER {
-      // procedure call
-      compiler.arguments.insert(compiler.arguments.begin(), $3);
-      // compiler.arguments.push_back($3); // dodanie przekazanych procedurze parametrów
+      // procedure call gcd(a, b, c)
+      // compiler.arguments.insert(compiler.arguments.begin(), $3);
+      compiler.arguments.push_back($3);
     }
     | T_IDENTIFIER {
       compiler.arguments.push_back($1);
@@ -331,7 +333,6 @@ args:
 
 expression:
       value {
-        std::cout << $1.num << " val " << std::endl;
         if(strcmp($1.str, "") != 0) {
           compiler.check_declaration($1.num, $1.str, $1.str1);
         }

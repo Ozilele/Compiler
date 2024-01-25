@@ -23,7 +23,5 @@ IN
   READ c;
   READ d;
   gcd(a,b,x);
-  gcd(c,d,y);
-  gcd(x,y,z);
-  WRITE z;
+  WRITE x;
 END

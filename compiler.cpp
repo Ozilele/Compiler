@@ -74,7 +74,6 @@ void Compiler::get_register_value(int num, const char *str, const char *str1, in
   }
 };
 
-
 void Compiler::set_number(long long value, int r) {
   std::vector<std::string> commandsToDo;
   bool isNewRegisterApplied = false;
@@ -168,7 +167,7 @@ void Compiler::set_number(long long value, int r) {
             break;
           }
           if(value <= 4) {
-            for(int i = 1; i <= value; i++) {
+            for(size_t i = 1; i <= value; i++) {
               commandsToDo.push_back("INC a");
             }
             break;
@@ -197,7 +196,7 @@ void Compiler::set_number(long long value, int r) {
             break;
           }
           if(value <= 4) {
-            for(int i = 1; i <= value; i++) {
+            for(size_t i = 1; i <= value; i++) {
               commandsToDo.push_back("INC a");
             }
             break;
@@ -228,7 +227,7 @@ void Compiler::set_number(long long value, int r) {
           break;
         }
         if(value <= 4) {
-          for(int i = 1; i <= value; i++) {
+          for(size_t i = 1; i <= value; i++) {
             commandsToDo.push_back("INC a");
           }
           break;
@@ -344,7 +343,7 @@ void Compiler::clear_register_value() {
   }
 }
 
-// 22, 9, 1
+// 22, 9, 1 // 
 void Compiler::change_command(std::string s, int i, int number) {
   if(machineCommands[i] == "JUMP " || machineCommands[i] == "JPOS " || machineCommands[i] == "JZERO " || machineCommands[i] == "JUMPR ") {
     machineCommands[i] += s; // dodanie miejsca skoku, np. JPOS 14
@@ -425,7 +424,8 @@ int Compiler::getIndex(const char *s) {
   int res = -1;
   for(auto i : procedures) {
     if(strcmp(i.first, s) == 0) {
-      res = i.second[procedure_index].first + 1;
+      res = i.second[procedure_index].first; // 
+      std::cout << "Index of var " << s << " to " << res << std::endl;
       procedure_index++;
       if(procedure_index == i.second.size()) {
         procedure_index = 0;
@@ -438,11 +438,12 @@ int Compiler::getIndex(const char *s) {
 
 void Compiler::add_procedure(const char *s) {
   std::vector<std::pair<int, bool>> index;
-  for(size_t i = 0; i < declarationList.size(); ++i) {
-    index.push_back(std::make_pair(declarationList[i].second, procedure_args[i]));
+  for(int i = 0; i < declarationList.size(); ++i) {
+    std::cout << declarationList[i].second << " yyy" << std::endl;
+    index.push_back(std::make_pair(declarationList[i].second, procedure_args[i])); // dodanie adresu w pamięci do vectora oraz tego czy zadeklarowana zmienna jest tablicą, czy nie 
   }
   procedure_args.clear();
-  procedures.push_back(std::make_pair(s, index));
+  procedures.push_back(std::make_pair(s, index)); // dodanie do listy procedur nazwy procedury oraz informacji o parametrach procedury(isTab, komórka pamięci)
 }
 
 std::vector<std::pair<int, bool>> Compiler::get_procedure_args(const char *s) {
