@@ -151,6 +151,10 @@ command:
         }
         compiler.add_machine_command("STORE b");
         compiler.add_machine_command("RST b");
+        compiler.add_machine_command("RST a");
+        // if(strcmp($1.str, "b") == 0 && $1.num != -1) {
+        //   compiler.add_machine_command("RST b");
+        // }
         compiler.set_variable_initialization($1.str);
         $$ = compiler.getCommandsNumber();
       }
@@ -247,8 +251,7 @@ proc_call:
           yyerror((std::string("Invalid procedure use ") + $1).c_str());
         }
 
-        // compiler.add_machine_command("RST a");
-        compiler.add_machine_command("RST b");
+        // compiler.add_machine_command("RST b");
         std::vector<std::pair<int, bool>> args = compiler.get_procedure_args($1);
         for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
           compiler.set_variable_initialization(compiler.arguments[i]);
@@ -259,7 +262,8 @@ proc_call:
           //   }
           // }
           compiler.get_register_value(0, compiler.arguments[i], nullptr, 0); // r_a <- 
-          // compiler.add_machine_command("RST b");
+          compiler.add_machine_command("RST b");
+          // std::cout << "wartosc pod rejestrem b " << compiler.registers[1] << std::endl;
           compiler.set_number(compiler.getIndex($1), 1); // r_b <- compiler.getIndex()
           compiler.add_machine_command("STORE b"); // r_a <- p_rb
         }
@@ -319,7 +323,6 @@ args_decl:
 args:
     args T_COMMA T_IDENTIFIER {
       // procedure call gcd(a, b, c)
-      // compiler.arguments.insert(compiler.arguments.begin(), $3);
       compiler.arguments.push_back($3);
     }
     | T_IDENTIFIER {

@@ -39,9 +39,22 @@ void Compiler::clear_declaration() {
   initializationList.clear();
 }
 
+void Compiler::saveToStorageRegister(int id) {
+  for(size_t i = 0; i < storageRegisters.size(); i++) {
+    if(!storageRegisters[i] && i == static_cast<size_t>(id)) {
+      storageRegisters[i] = true;
+      break;
+    }
+  }
+}
+
+void Compiler::deleteStorageRegister(int id) {
+  storageRegisters[id] = false;
+}
+
 void Compiler::get_register_value(int num, const char *str, const char *str1, int registerNum) {
   if(num == -1) { // case when access T[a]
-    std::cout << str << ", " << str1 << std::endl;
+    std::cout << str << ", " << str1 << " quxz" << std::endl;
     set_number(get_declaration(str), 1);
     for(auto arg : function_arguments) {
       if(arg.first <= get_declaration(str) && get_declaration(str) < arg.second) {
@@ -62,7 +75,7 @@ void Compiler::get_register_value(int num, const char *str, const char *str1, in
     add_machine_command(std::string("PUT ") + registerList[registerNum]);
   }
   else { // case when access variable a,x or T[2] itd.
-    // std::cout << get_declaration(str) << " xxzaza" << std::endl;
+    // std::cout << get_declaration(str) << " " << str << std::endl;
     set_number(get_declaration(str) + num, registerNum);
     for(auto arg : function_arguments) {
       if(arg.first <= get_declaration(str) && get_declaration(str) < arg.second) {
@@ -273,6 +286,12 @@ void Compiler::set_number(long long value, int r) {
         break;
       }
       else if(!isNewRegisterApplied && !decrement) { // new register e not applied
+        if(value <= 4) {
+          for(size_t i = 1; i <= value; i++) {
+            commandsToDo.push_back(std::string("INC ") + registerList[r]);
+          }
+          break;
+        }
         commandsToDo.push_back("PUT g"); // r_g <- r_a
         commandsToDo.push_back(std::string("GET ") + registerList[r]); // r_a <- r_b
 
@@ -302,6 +321,12 @@ void Compiler::set_number(long long value, int r) {
         break;
       }
       else if(!isNewRegisterApplied && decrement) {
+        if((registers[r] - value) <= 4) {
+          for(size_t i = 1; i <= (registers[r] - value); i++) {
+            commandsToDo.push_back(std::string("DEC ") + registerList[r]);
+          }
+          break;
+        }
         commandsToDo.push_back("PUT g"); 
         commandsToDo.push_back(std::string("GET ") + registerList[r]); 
 
@@ -390,7 +415,7 @@ void Compiler::set_number(long long value, int r) {
     }
   }
   
-  std::cout << " Wyjście z pętli while " << std::endl;
+  // std::cout << " Wyjście z pętli while " << std::endl;
   for(auto command : commandsToDo) {
     add_machine_command(command);
   }
@@ -647,6 +672,8 @@ bool Compiler::is_Tab(const char *s) {
   }
   return false;
 }
+
+// void Compiler::is
 
 // JUMP 32, 24
 void Compiler::add_commands_inside(const std::string s, int i) {

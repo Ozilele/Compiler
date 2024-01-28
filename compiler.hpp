@@ -16,6 +16,7 @@ class Compiler {
 
   public:
     std::vector<int> registers = { -1, -1, -1, -1, -1, -1, -1, -1 };
+    std::vector<bool> storageRegisters = { false, false, false, false, false, false, false, false };
     std::string registerList = "abcdefgh";
     std::vector<const char *> arguments;
     std::vector<std::pair<int, int>> function_arguments;
@@ -40,8 +41,10 @@ class Compiler {
     std::vector<std::string> getCommands();
     void clearCommands();
   
-    bool get_variable_initialization(const char *s); // not done
-    void check_var_initialization(long long num, const char *var, const char *T); // not done
+    bool get_variable_initialization(const char *s); 
+    void check_var_initialization(long long num, const char *var, const char *T); 
+    void saveToStorageRegister(int id);
+    void deleteStorageRegister(int id);
 
     void add_procedure(const char *s);
     std::vector<std::pair<int, bool>> get_procedure_args(const char *s);

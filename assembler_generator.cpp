@@ -678,7 +678,6 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
           }
         }
         else { // 5 mod x jest git
-        std::cout << "HEjo" << std::endl;
           compiler->get_register_value(variable_num, var, var_s, 1);
           if(!compiler->checkLastCommand("STORE b")) {
             if(compiler->checkLastCommand("LOAD b")) {
@@ -788,7 +787,6 @@ void AssemblerGenerator::get_number(long long num, const char *str, const char *
     compiler->add_machine_command("RST a");
     compiler->set_number(num, 0);
   } else {
-    // compiler->add_machine_command("RST b");
     compiler->get_register_value(num, str, str1, 3);
     if(!compiler->checkLastCommand("STORE d")) {
       if(compiler->checkLastCommand("LOAD d")) {
