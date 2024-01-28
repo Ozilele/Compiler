@@ -788,13 +788,13 @@ void AssemblerGenerator::get_number(long long num, const char *str, const char *
     compiler->add_machine_command("RST a");
     compiler->set_number(num, 0);
   } else {
-    compiler->add_machine_command("RST b");
-    compiler->get_register_value(num, str, str1, 1);
-    if(!compiler->checkLastCommand("STORE b")) {
-      if(compiler->checkLastCommand("LOAD b")) {
+    // compiler->add_machine_command("RST b");
+    compiler->get_register_value(num, str, str1, 3);
+    if(!compiler->checkLastCommand("STORE d")) {
+      if(compiler->checkLastCommand("LOAD d")) {
         compiler->add_machine_command("LOAD a");
       } else {
-        compiler->add_machine_command("LOAD b");
+        compiler->add_machine_command("LOAD d");
       }
     }
   }

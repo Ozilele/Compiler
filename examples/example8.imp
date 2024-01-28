@@ -53,6 +53,7 @@ PROGRAM IS
 IN
   n:=23;
   shuffle(t,n);
+  WRITE t[22];
   write(t,n);
   WRITE 1234567890;
   sort(t,n);

@@ -18,6 +18,7 @@ IN
     i:=i+1;
   ENDWHILE
 END
+
 PROCEDURE wypisz(T s, n) IS
   i
 IN
@@ -29,6 +30,7 @@ IN
     i:=i+1;
   ENDWHILE
 END
+
 PROGRAM IS
   n, sito[100]
 IN

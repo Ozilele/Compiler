@@ -79,17 +79,17 @@ start_main:
       compiler.clearCommands();
     } else {
       std::cout << " Change command " << compiler.getCommandsNumber() << " " << std::endl;
-      compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1);
+      compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1); // Add jump to the block PROGRAM IS
     }
   }
 
 procedures:
       procedures T_PROCEDURE proc_head T_IS declarations T_IN commands T_END {
         std::cout << "Procedure decl RETURN " << compiler.get_declaration(" RETURN") << std::endl;
-        compiler.set_number(compiler.get_declaration(" RETURN"), 1);
-        compiler.add_machine_command("LOAD b");
+        compiler.set_number(compiler.get_declaration(" RETURN"), 1); // r_b <- r_a
+        compiler.add_machine_command("LOAD b"); // r_a <- p_rb
         compiler.clear_declaration();
-        compiler.add_machine_command("JUMPR a");
+        compiler.add_machine_command("JUMPR a"); // k <- r_a
         compiler.clear_register_value();
       }
       | procedures T_PROCEDURE proc_head T_IS T_IN commands T_END {
@@ -100,7 +100,6 @@ procedures:
         compiler.clear_register_value();
       }
       | {
-        // std::cout << " Nie ma procedur " << std::endl;
         compiler.add_machine_command("JUMP ");
       }
 ;
@@ -232,7 +231,7 @@ proc_head:
         int min = compiler.get_first_declaration();
         int max = compiler.get_declaration(" RETURN"); // zakres komorek pamieci ktore sa zarezerwowane dla procedury
         std::cout << "func args " << min << ", " << max << std::endl;
-        compiler.function_arguments.push_back(std::make_pair(min, max));
+        compiler.function_arguments.push_back(std::make_pair(min, max)); // zakres argumentów procedury
       }
 ;
 
@@ -248,8 +247,9 @@ proc_call:
           yyerror((std::string("Invalid procedure use ") + $1).c_str());
         }
 
+        // compiler.add_machine_command("RST a");
+        compiler.add_machine_command("RST b");
         std::vector<std::pair<int, bool>> args = compiler.get_procedure_args($1);
-        
         for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
           compiler.set_variable_initialization(compiler.arguments[i]);
           std::cout << "Param to procedure " << compiler.arguments[i] << std::endl;
@@ -259,22 +259,19 @@ proc_call:
           //   }
           // }
           compiler.get_register_value(0, compiler.arguments[i], nullptr, 0); // r_a <- 
-          // std::cout << " po reg: " << compiler.getIndex($1) << std::endl;
-          compiler.add_machine_command("RST b");  
-          // std::cout << compiler.get_declaration(compiler.arguments[i]) << " ss" << std::endl;
+          // compiler.add_machine_command("RST b");
           compiler.set_number(compiler.getIndex($1), 1); // r_b <- compiler.getIndex()
-          compiler.add_machine_command("STORE b");
-          compiler.add_machine_command("RST a");
+          compiler.add_machine_command("STORE b"); // r_a <- p_rb
         }
 
-        compiler.set_number(compiler.getIndex($1), 1);
+        compiler.set_number(compiler.getIndex($1), 1); // set return()
         compiler.add_machine_command("RST a");
         compiler.add_machine_command("INC a");
         compiler.add_machine_command("SHL a");
         compiler.add_machine_command("SHL a");
         compiler.add_machine_command("STRK c"); // r_c <- k(command Number)
-        compiler.add_machine_command("ADD c");
-        compiler.add_machine_command("STORE b");
+        compiler.add_machine_command("ADD c"); // r_a + r_c
+        compiler.add_machine_command("STORE b"); // p_rb <- r_a(zapisanie do returna adresu powrotu z procedury)
         compiler.add_machine_command("JUMP " + std::to_string(compiler.get_beginning_procedure($1))); // jump to the line in which procedure starts
         compiler.arguments.clear();
       }
@@ -465,7 +462,6 @@ identifier:
 %%
 
 void yyerror(const char* const message) {
-  std::cout << "CO tam " << std::endl;
   std::cout << "Error: " <<  message << std::endl;
   exit(1);
 }
