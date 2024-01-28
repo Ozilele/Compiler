@@ -1,4 +1,7 @@
+
 %option noyywrap
+%option yylineno
+%option nounput
 
 %{
 #include <iostream>

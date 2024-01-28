@@ -95,8 +95,6 @@ void Compiler::set_number(long long value, int r) {
   long long value_2_reg_1 = 1;
   long long value_2_reg_2 = 1;
   
-  std::cout << "Value to " << value << ", " << registers[r] << std::endl;
-
   if(value == registers[r]) {
     return;
   }
@@ -415,7 +413,6 @@ void Compiler::set_number(long long value, int r) {
     }
   }
   
-  // std::cout << " Wyjście z pętli while " << std::endl;
   for(auto command : commandsToDo) {
     add_machine_command(command);
   }
@@ -548,10 +545,20 @@ void Compiler::set_variable_initialization(const char *variable) {
   }
 }
 
+bool Compiler::check_var_initialization(const char *variable) {
+  for(auto &it : initializationList) {
+    if(std::string(it.first) == variable) {
+      return it.second;
+    }
+  } // if not in initializationList, return false
+  return false;
+}
+
 void Compiler::check_declaration(long long num, const char *var, const char *T) {
   if(strcmp(T, "") == 0) { // case single variable(x) and T[10]
     int var_declaration = get_declaration(var);
     if(var_declaration == -1) {
+      std::cout << var << " x" << std::endl;
       return yyerror((std::string("Uzycie niezadeklarowanej zmiennej ") + var).c_str());
     }
   } else { // T[a]
@@ -571,22 +578,15 @@ void Compiler::check_declaration(long long num, const char *var, const char *T) 
 std::string Compiler::check_var_declaration(const char *var, bool isTab) {
   if(!isTab) { // normal variable
     if(get_declaration(var) == -1) {
-      return "Błąd: uzycie niezadeklarowanej zmiennej";
-      // return (std::to_string("Błąd: uzycie niezadeklarowanej zmiennej ") + var).c_str();
+      return "ERR";
     }
     return "";
   } else {
     if(get_declaration(var) == -1) {
-      return "";
-      // return "Błąd: uzycie niezadeklarowanej tablicy";
-      // return (std::to_string("Błąd: uzycie niezadeklarowanej tablicy ") + var).c_str();
+      return "ERR";
     }
     return "";
   }
-}
-
-void Compiler::check_var_initialization(long long num, const char *var, const char *T) {
-
 }
 
 void Compiler::clearCommands() {
@@ -629,6 +629,10 @@ std::vector<std::pair<int, bool>> Compiler::get_procedure_args(const char *s) {
   return std::vector<std::pair<int, bool>>();
 }
 
+// bool Compiler::check_procedure_params(const char *s) {
+
+// }
+
 void Compiler::add_beginning_procedure(const char *s, int i) {
   beginning_procedure.push_back(std::make_pair(s, i));
 }
@@ -659,7 +663,6 @@ int Compiler::size_args_procedure(const char *s) {
       return entry.second.size();
     }
   }
-  yyerror((std::string("Undefined procedure ") + s).c_str());
   return -1;
 }
 

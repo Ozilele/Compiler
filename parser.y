@@ -12,6 +12,7 @@
   void yyerror(const char* const message);
 
   extern FILE *yyin;
+  extern int yylineno;
   
   Compiler compiler;
   AssemblerGenerator asmGenerator(&compiler);
@@ -241,12 +242,15 @@ proc_head:
 
 proc_call:
       T_IDENTIFIER T_LEFTPARENTHESIS args T_RIGHTPARENTHESIS {
-        // if(compiler.size_args_procedure($1) - 1 != compiler.arguments.size()) {
-        //   if(compiler.size_args_procedure($1) == -1) {
-        //     yyerror((std::string("Undefined procedure ") + $1).c_str());
-        //   }
-        //   yyerror((std::string("Invalid procedure params ") + $1).c_str());
-        // }
+        if(compiler.size_args_procedure($1) == -1) {
+          yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niezdefiniowana procedura " + $1).c_str());
+        }
+        if(compiler.size_args_procedure($1) - 1 != compiler.arguments.size()) {
+          if(compiler.size_args_procedure($1) == -1) {
+            yyerror((std::string("Undefined procedure ") + $1).c_str());
+          }
+          yyerror((std::string("Invalid procedure params ") + $1).c_str());
+        }
         if(compiler.getCommandsNumber() < compiler.get_beginning_next_procedure($1) || compiler.get_beginning_next_procedure($1) == -1) {
           yyerror((std::string("Invalid procedure use ") + $1).c_str());
         }
@@ -266,6 +270,7 @@ proc_call:
           // std::cout << "wartosc pod rejestrem b " << compiler.registers[1] << std::endl;
           compiler.set_number(compiler.getIndex($1), 1); // r_b <- compiler.getIndex()
           compiler.add_machine_command("STORE b"); // r_a <- p_rb
+          compiler.add_machine_command("RST a");
         }
 
         compiler.set_number(compiler.getIndex($1), 1); // set return()
@@ -431,8 +436,7 @@ identifier:
       T_IDENTIFIER {
         std::string check = compiler.check_var_declaration($1, false);
         if(check != "") {
-          std::cout << check << std::endl;
-          exit(1);
+          yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezadeklarowanej zmiennej " + $1).c_str());
         }
         $$.num = 0;
         $$.str = $1; // nazwa zmiennej
@@ -442,8 +446,7 @@ identifier:
       | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[10]
         std::string check = compiler.check_var_declaration($1, true);
         if(check != "") {
-          std::cout << check << std::endl;
-          exit(1);
+          yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezadeklarowanej zmiennej " + $1).c_str());
         }
         $$.num = $3; // numer indeksu w tablicy
         $$.str = $1; // nazwa tablicy(zmiennej)
@@ -451,10 +454,12 @@ identifier:
         $$.str1[0] = '\0';
       }
       | T_IDENTIFIER T_LEFT_BRACKET T_IDENTIFIER T_RIGHT_BRACKET { // T[a]
-        std::string check = compiler.check_var_declaration($1, true);
+        std::string check = compiler.check_var_declaration($1, true); // sprawdzenie deklaracji tablicy
         if(check != "") {
-          std::cout << check << std::endl;
-          exit(1);
+          yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezadeklarowanej zmiennej " + $1).c_str());
+        }
+        if(!compiler.check_var_initialization($3)) {
+          yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3).c_str());
         }
         $$.num = -1; // -1 bo indeks nie jest cyfra tylko zmienna
         $$.str = $1;

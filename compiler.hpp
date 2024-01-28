@@ -42,12 +42,13 @@ class Compiler {
     void clearCommands();
   
     bool get_variable_initialization(const char *s); 
-    void check_var_initialization(long long num, const char *var, const char *T); 
+    bool check_var_initialization(const char *variable);
     void saveToStorageRegister(int id);
     void deleteStorageRegister(int id);
 
     void add_procedure(const char *s);
     std::vector<std::pair<int, bool>> get_procedure_args(const char *s);
+    bool check_procedure_params(const char *s);
     int getIndex(const char *s);
     void add_beginning_procedure(const char *s, int i); // not done
     int get_beginning_procedure(const char *s); // not done
