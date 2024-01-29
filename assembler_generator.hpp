@@ -28,7 +28,6 @@ class AssemblerGenerator {
     void if_skip_else();
 
     void finish_program();
-
 };
 
 #endif

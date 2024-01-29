@@ -9,20 +9,30 @@ extern void yyerror(const char *s);
 
 void Compiler::add_declaration(const char *s, int size) {
   int isVariableAlreadyDeclared = get_declaration(s);
-  if(isVariableAlreadyDeclared != -1) {
-    return yyerror((std::string("Druga deklaracja zmiennej ") + s).c_str());
-  }
+  // if(isVariableAlreadyDeclared != -1) {
+  //   return yyerror((std::string("Druga deklaracja zmiennej ") + s).c_str());
+  // }
   std::cout << s << ", " << memoryCell << std::endl;
   declarationList.push_back(std::make_pair(s, memoryCell));
   initializationList.push_back(std::make_pair(s, false)); // zmienna zadeklarowana ale nie zainicjowana jeszcze
   memoryCell += size;
 };
 
-int Compiler::get_declaration(const char *s) { // Zwraca komorkę pamięci(p_i) gdzie zostala zadeklarowana zmienna, jezeli -1 to znaczy ze nie bylo deklaracji zmiennej - error
+int Compiler::get_declaration(const char *s) {
   for(const auto i : declarationList) {
     if(strcmp(i.first, s) == 0) {
       return i.second;
     }
+  }
+  return -1;
+}
+
+int Compiler::get_next_declaration(const char *s) {
+  auto it = std::find_if(declarationList.begin(), declarationList.end(), [s](const auto &pair) {
+    return strcmp(pair.first, s) == 0;
+  });
+  if(it != declarationList.end()) {
+    return std::next(it)->second;
   }
   return -1;
 }
@@ -54,7 +64,6 @@ void Compiler::deleteStorageRegister(int id) {
 
 void Compiler::get_register_value(int num, const char *str, const char *str1, int registerNum) {
   if(num == -1) { // case when access T[a]
-    std::cout << str << ", " << str1 << " quxz" << std::endl;
     set_number(get_declaration(str), 1);
     for(auto arg : function_arguments) {
       if(arg.first <= get_declaration(str) && get_declaration(str) < arg.second) {
@@ -510,7 +519,6 @@ void Compiler::clear_register_value() {
   }
 }
 
-// 22, 9, 1 // 128, 37, 1, (151, 0, 1)
 void Compiler::change_command(std::string s, int i, int number) {
   if(machineCommands[i] == "JUMP " || machineCommands[i] == "JPOS " || machineCommands[i] == "JZERO " || machineCommands[i] == "JUMPR ") {
     machineCommands[i] += s; // dodanie miejsca skoku, np. JPOS 14
@@ -556,10 +564,8 @@ bool Compiler::check_var_initialization(const char *variable) {
 
 void Compiler::check_declaration(long long num, const char *var, const char *T) {
   if(strcmp(T, "") == 0) { // case single variable(x) and T[10]
-    int var_declaration = get_declaration(var);
-    if(var_declaration == -1) {
-      std::cout << var << " x" << std::endl;
-      return yyerror((std::string("Uzycie niezadeklarowanej zmiennej ") + var).c_str());
+    if(get_declaration(var) == -1) {
+      // return yyerror((std::string("Uzycie niezadeklarowanej zmiennej ") + var).c_str());
     }
   } else { // T[a]
     int tab_declaration = get_declaration(T);
@@ -598,7 +604,7 @@ int Compiler::getIndex(const char *s) {
   for(auto i : procedures) {
     if(strcmp(i.first, s) == 0) {
       res = i.second[procedure_index].first; // 
-      std::cout << "Index of var " << s << " to " << res << std::endl;
+      // std::cout << "Index of var " << s << " to " << res << std::endl;
       procedure_index++;
       if(procedure_index == i.second.size()) {
         procedure_index = 0;
@@ -607,6 +613,15 @@ int Compiler::getIndex(const char *s) {
     }
   }
   return res;
+}
+
+bool Compiler::isAnArray(const char *s) {
+  for(const auto& variable : variables) {
+    if(strcmp(variable.first, s) == 0) {
+      return variable.second;
+    }
+  }
+  return false;
 }
 
 void Compiler::add_procedure(const char *s) {
@@ -676,9 +691,6 @@ bool Compiler::is_Tab(const char *s) {
   return false;
 }
 
-// void Compiler::is
-
-// JUMP 32, 24
 void Compiler::add_commands_inside(const std::string s, int i) {
   for(auto &command : machineCommands) { // Aktualizacja wartosci skoków
     if((command.substr(0, 4) == "JUMP" || command.substr(0, 4) == "JPOS") && command.size() > 5) {

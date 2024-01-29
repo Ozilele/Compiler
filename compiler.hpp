@@ -19,11 +19,13 @@ class Compiler {
     std::vector<bool> storageRegisters = { false, false, false, false, false, false, false, false };
     std::string registerList = "abcdefgh";
     std::vector<const char *> arguments;
+    std::vector<std::pair<const char*, bool>> variables;
     std::vector<std::pair<int, int>> function_arguments;
     std::vector<bool> procedure_args;
 
     void add_declaration(const char *s, int size);
     int get_declaration(const char *s);
+    int get_next_declaration(const char *s);
     int get_first_declaration();
     void check_declaration(long long num, const char *var, const char *T);
     std::string check_var_declaration(const char *var, bool isTab);
@@ -45,6 +47,8 @@ class Compiler {
     bool check_var_initialization(const char *variable);
     void saveToStorageRegister(int id);
     void deleteStorageRegister(int id);
+
+    bool isAnArray(const char *s);
 
     void add_procedure(const char *s);
     std::vector<std::pair<int, bool>> get_procedure_args(const char *s);

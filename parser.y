@@ -79,7 +79,7 @@ start_main:
     if(compiler.getCommandsNumber() == 1) {
       compiler.clearCommands();
     } else {
-      std::cout << " Change command " << compiler.getCommandsNumber() << " " << std::endl;
+      // std::cout << " Change command " << compiler.getCommandsNumber() << " " << std::endl;
       compiler.change_command(std::to_string(compiler.getCommandsNumber()), 0, 1); // Add jump to the block PROGRAM IS
     }
   }
@@ -128,7 +128,14 @@ commands:
 ;
 
 command:
-      identifier T_ASSIGN expression T_SEMICOLON { // tested
+      identifier T_ASSIGN expression T_SEMICOLON {
+        if($1.num == 0) { // a
+          if(compiler.get_next_declaration($1.str) > compiler.get_declaration($1.str) + 1) { // $1.str is an array
+            if(!compiler.isAnArray($1.str)) {
+              yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe uzycie tablicy " + $1.str).c_str());
+            }
+          }
+        }
         bool whether = false;
         for(auto i : compiler.function_arguments) {
           if((i.first <= compiler.get_declaration($1.str) && compiler.get_declaration($1.str) < i.second) || (i.first <= compiler.get_declaration($1.str1) && compiler.get_declaration($1.str1) < i.second)) {
@@ -147,19 +154,16 @@ command:
         compiler.get_register_value($1.num, $1.str, $1.str1, 1);
 
         if(whether) {
-          compiler.add_machine_command("PUT b"); // r_b <- r_a
-          compiler.add_machine_command("GET h"); // r_a <- r_h
+          compiler.add_machine_command("PUT b");
+          compiler.add_machine_command("GET h"); 
         }
         compiler.add_machine_command("STORE b");
         compiler.add_machine_command("RST b");
         compiler.add_machine_command("RST a");
-        // if(strcmp($1.str, "b") == 0 && $1.num != -1) {
-        //   compiler.add_machine_command("RST b");
-        // }
         compiler.set_variable_initialization($1.str);
         $$ = compiler.getCommandsNumber();
       }
-      | start T_IF condition T_THEN commands start T_ELSE commands T_ENDIF { // tested
+      | start T_IF condition T_THEN commands start T_ELSE commands T_ENDIF {
         std::cout << $5 << ", if scope" << std::endl;
         std::cout << $3  << ", cond scope " << std::endl;
         std::cout << $8 << ", else scope" << std::endl;
@@ -168,7 +172,7 @@ command:
         $$ = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-      | start T_IF condition T_THEN commands T_ENDIF { // tested
+      | start T_IF condition T_THEN commands T_ENDIF { 
         // $5 is the number of line where the scope of this if ends, $3 is the number of line where the condition of if ends
         std::cout << $5 << ", ifik" << std::endl;
         std::cout << $3 << ", cond" << std::endl;
@@ -176,16 +180,15 @@ command:
         $$ = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-      | start T_WHILE condition T_DO commands T_ENDWHILE { // tested
+      | start T_WHILE condition T_DO commands T_ENDWHILE {
         std::cout << $3 << ", cond while" << std::endl;
-        std::cout << std::to_string(compiler.getCommandsNumber() + 1) << " command nr" << std::endl;
         // $3 to koniec warunku condition, $1 to numer linii od ktorej zaczyna sie petla while
         compiler.change_command(std::to_string(compiler.getCommandsNumber() + 1), $3, 1); // dodanie wartosci jumpa w przypadku niespelnienia condition
         compiler.add_machine_command("JUMP " + std::to_string($1)); // dodanie jumpa do startu pętli
         $$ = compiler.getCommandsNumber();
         compiler.clear_register_value();
       }
-      | start T_REPEAT commands T_UNTIL condition T_SEMICOLON { // tested
+      | start T_REPEAT commands T_UNTIL condition T_SEMICOLON {
         std::cout << $1 << ", " << $5 << ", " << std::endl;
         compiler.change_command(std::to_string($1), $5 - 1, 1); // Jump to the start of repeat loop after condition is checked
         $$ = compiler.getCommandsNumber();
@@ -194,12 +197,18 @@ command:
       | proc_call T_SEMICOLON {
         $$ = compiler.getCommandsNumber();
       }
-      | T_READ identifier T_SEMICOLON { // READ x, READ T[2], T[a] // tested
+      | T_READ identifier T_SEMICOLON { // READ x, READ T[2], T[a]
+        if($2.num == 0) { // a
+          if(compiler.get_next_declaration($2.str) > compiler.get_declaration($2.str) + 1) {
+            if(!compiler.isAnArray($2.str)) {
+              yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe uzycie tablicy " + $2.str).c_str());
+            }
+          }
+        }
         compiler.add_machine_command("READ");
         compiler.get_register_value($2.num, $2.str, $2.str1, 1);
         compiler.add_machine_command("STORE b"); // p_rb <- ra
-        // change_variable_initialization
-        // compiler.set_variable_initialization($2.str);
+        compiler.set_variable_initialization($2.str);
         $$ = compiler.getCommandsNumber();
       }
       | T_WRITE value T_SEMICOLON { // tested
@@ -246,16 +255,15 @@ proc_call:
           yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niezdefiniowana procedura " + $1).c_str());
         }
         if(compiler.size_args_procedure($1) - 1 != compiler.arguments.size()) {
-          if(compiler.size_args_procedure($1) == -1) {
-            yyerror((std::string("Undefined procedure ") + $1).c_str());
-          }
+          // if(compiler.size_args_procedure($1) == -1) {
+          //   yyerror((std::string("Undefined procedure ") + $1).c_str());
+          // }
           yyerror((std::string("Invalid procedure params ") + $1).c_str());
         }
         if(compiler.getCommandsNumber() < compiler.get_beginning_next_procedure($1) || compiler.get_beginning_next_procedure($1) == -1) {
           yyerror((std::string("Invalid procedure use ") + $1).c_str());
         }
 
-        // compiler.add_machine_command("RST b");
         std::vector<std::pair<int, bool>> args = compiler.get_procedure_args($1);
         for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
           compiler.set_variable_initialization(compiler.arguments[i]);
@@ -288,15 +296,27 @@ proc_call:
 
 declarations:
       declarations T_COMMA T_IDENTIFIER {
+        if(compiler.get_declaration($3) != -1) {
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $3).c_str());
+        }
         compiler.add_declaration($3, 1); // memory Cell to 1
       }
       | declarations T_COMMA T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET {
-        compiler.add_declaration($3, $5); // tab 
+        if(compiler.get_declaration($3) != -1) {
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $3).c_str());
+        }
+        compiler.add_declaration($3, $5);
       }
       | T_IDENTIFIER {
+        if(compiler.get_declaration($1) != -1) {
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $1).c_str());
+        }
         compiler.add_declaration($1, 1);
       }
       | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[100]
+        if(compiler.get_declaration($1) != -1) {
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $1).c_str());
+        }
         compiler.add_declaration($1, $3);
       }
 ;
@@ -332,59 +352,135 @@ args:
     }
     | T_IDENTIFIER {
       compiler.arguments.push_back($1);
-      // compiler.arguments.insert(compiler.arguments.begin(), $1);
     }
 ;
 
 expression:
       value {
-        if(strcmp($1.str, "") != 0) {
-          compiler.check_declaration($1.num, $1.str, $1.str1);
+        if(strcmp($1.str, "") != 0 && strcmp($1.str1, "") == 0) {
+          if(!compiler.check_var_initialization($1.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str).c_str());
+          }
+        }
+        else if($1.num == -1) {
+          if(!compiler.check_var_initialization($1.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str1).c_str());
+          }
         }
         asmGenerator.get_number($1.num, $1.str, $1.str1);
       }
       | value T_ADD value {
-        if(strcmp($1.str, "") != 0) {
-          compiler.check_declaration($1.num, $1.str, $1.str1);
+        if(strcmp($1.str, "") != 0 && strcmp($1.str1, "") == 0) { // variable, x[2]
+          if(!compiler.check_var_initialization($1.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str).c_str());
+          }
+        } 
+        else if($1.num == -1) {
+          if(!compiler.check_var_initialization($1.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str1).c_str());
+          }
         }
-        if(strcmp($3.str, "") != 0) {
-          compiler.check_declaration($3.num, $3.str, $3.str1);
+        if(strcmp($3.str, "") != 0 && strcmp($3.str1, "") == 0) {
+          if(!compiler.check_var_initialization($3.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str).c_str());
+          }
+        }
+        else if($3.num == -1) {
+          if(!compiler.check_var_initialization($3.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str1).c_str());
+          }
         }
         asmGenerator.add($1.num, $1.str, $1.str1, $3.num, $3.str, $3.str1);
       }
       | value T_SUB value {
-        if(strcmp($1.str, "") != 0) {
-          compiler.check_declaration($1.num, $1.str, $1.str1);
+        if(strcmp($1.str, "") != 0 && strcmp($1.str1, "") == 0) { // variable, x[2]
+          if(!compiler.check_var_initialization($1.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str).c_str());
+          }
+        } 
+        else if($1.num == -1) {
+          if(!compiler.check_var_initialization($1.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str1).c_str());
+          }
         }
-        if(strcmp($3.str, "") != 0) {
-          compiler.check_declaration($3.num, $3.str, $3.str1);
+        if(strcmp($3.str, "") != 0 && strcmp($3.str1, "") == 0) {
+          if(!compiler.check_var_initialization($3.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str).c_str());
+          }
+        }
+        else if($3.num == -1) {
+          if(!compiler.check_var_initialization($3.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str1).c_str());
+          }
         }
         asmGenerator.subtract($1.num, $1.str, $1.str1, $3.num, $3.str, $3.str1);
       }
       | value T_MUL value {
-        if(strcmp($1.str, "") != 0) {
-          compiler.check_declaration($1.num, $1.str, $1.str1);
+        if(strcmp($1.str, "") != 0 && strcmp($1.str1, "") == 0) { // variable, x[2]
+          if(!compiler.check_var_initialization($1.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str).c_str());
+          }
         }
-        if(strcmp($3.str, "") != 0) {
-          compiler.check_declaration($3.num, $3.str, $3.str1);
+        else if($1.num == -1) {
+          if(!compiler.check_var_initialization($1.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str1).c_str());
+          }
+        }
+        if(strcmp($3.str, "") != 0 && strcmp($3.str1, "") == 0) {
+          if(!compiler.check_var_initialization($3.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str).c_str());
+          }
+        }
+        else if($3.num == -1) {
+          if(!compiler.check_var_initialization($3.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str1).c_str());
+          }
         }
         asmGenerator.multiply($1.num, $1.str, $1.str1, $3.num, $3.str, $3.str1);
       }
       | value T_DIV value {
-        if(strcmp($1.str, "") != 0) {
-          compiler.check_declaration($1.num, $1.str, $1.str1);
+        if(strcmp($1.str, "") != 0 && strcmp($1.str1, "") == 0) { // variable, x[2]
+          if(!compiler.check_var_initialization($1.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str).c_str());
+          }
         }
-        if(strcmp($3.str, "") != 0) {
-          compiler.check_declaration($3.num, $3.str, $3.str1);
+        else if($1.num == -1) {
+          if(!compiler.check_var_initialization($1.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str1).c_str());
+          }
+        }
+        if(strcmp($3.str, "") != 0 && strcmp($3.str1, "") == 0) {
+          if(!compiler.check_var_initialization($3.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str).c_str());
+          }
+        }
+        else if($3.num == -1) {
+          if(!compiler.check_var_initialization($3.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str1).c_str());
+          }
         }
         asmGenerator.divide($1.num, $1.str, $1.str1, $3.num, $3.str, $3.str1);
       }
       | value T_MOD value {
-        if(strcmp($1.str, "") != 0) {
-          compiler.check_declaration($1.num, $1.str, $1.str1);
+        if(strcmp($1.str, "") != 0 && strcmp($1.str1, "") == 0) { // variable, x[2]
+          if(!compiler.check_var_initialization($1.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str).c_str());
+          }
         }
-        if(strcmp($3.str, "") != 0) {
-          compiler.check_declaration($3.num, $3.str, $3.str1);
+        else if($1.num == -1) {
+          if(!compiler.check_var_initialization($1.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $1.str1).c_str());
+          }
+        }
+        if(strcmp($3.str, "") != 0 && strcmp($3.str1, "") == 0) {
+          if(!compiler.check_var_initialization($3.str)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str).c_str());
+          }
+        }
+        else if($3.num == -1) {
+          if(!compiler.check_var_initialization($3.str1)) {
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3.str1).c_str());
+          }
         }
         asmGenerator.modulo($1.num, $1.str, $1.str1, $3.num, $3.str, $3.str1);
       }
@@ -438,6 +534,7 @@ identifier:
         if(check != "") {
           yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezadeklarowanej zmiennej " + $1).c_str());
         }
+        compiler.variables.push_back(std::make_pair($1, false));
         $$.num = 0;
         $$.str = $1; // nazwa zmiennej
         $$.str1 = new char[1];
@@ -448,12 +545,13 @@ identifier:
         if(check != "") {
           yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezadeklarowanej zmiennej " + $1).c_str());
         }
+        compiler.variables.push_back(std::make_pair($1, true));
         $$.num = $3; // numer indeksu w tablicy
         $$.str = $1; // nazwa tablicy(zmiennej)
         $$.str1 = new char[1];
         $$.str1[0] = '\0';
       }
-      | T_IDENTIFIER T_LEFT_BRACKET T_IDENTIFIER T_RIGHT_BRACKET { // T[a]
+      | T_IDENTIFIER T_LEFT_BRACKET T_IDENTIFIER T_RIGHT_BRACKET { // sito[a]
         std::string check = compiler.check_var_declaration($1, true); // sprawdzenie deklaracji tablicy
         if(check != "") {
           yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezadeklarowanej zmiennej " + $1).c_str());
@@ -461,6 +559,7 @@ identifier:
         if(!compiler.check_var_initialization($3)) {
           yyerror((std::string("Line ") + std::to_string(yylineno) + ": Uzycie niezainicjowanej zmiennej " + $3).c_str());
         }
+        compiler.variables.push_back(std::make_pair($1, true));
         $$.num = -1; // -1 bo indeks nie jest cyfra tylko zmienna
         $$.str = $1;
         $$.str1 = $3; // indeks w tablicy to zmienna

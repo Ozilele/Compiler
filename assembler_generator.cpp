@@ -3,7 +3,6 @@
 #include <string>
 #include <iostream>
 
-// Add done and tested
 void AssemblerGenerator::add(long long num1, const char *str_, const char *str1, long long num2, const char *str_2, const char *str2) {
   long long result;
   int counter = 0;
@@ -84,7 +83,6 @@ void AssemblerGenerator::add(long long num1, const char *str_, const char *str1,
   }
 }
 
-// Subtract done and tested
 void AssemblerGenerator::subtract(long long num1, const char *str_, const char *str1, long long num2, const char *str_2, const char *str2) {
   long long result;
   int counter = 0;
@@ -181,7 +179,6 @@ void AssemblerGenerator::subtract(long long num1, const char *str_, const char *
   }
 }
 
-// Multiply done and tested
 void AssemblerGenerator::multiply(long long num1, const char *str_, const char *str1, long long num2, const char *str_2, const char *str2) {
   long long result;
   int counter = 0;
@@ -677,7 +674,7 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
             compiler->add_machine_command("DEC a");
           }
         }
-        else { // 5 mod x jest git
+        else { 
           compiler->get_register_value(variable_num, var, var_s, 1);
           if(!compiler->checkLastCommand("STORE b")) {
             if(compiler->checkLastCommand("LOAD b")) {
@@ -703,7 +700,7 @@ void AssemblerGenerator::modulo(long long num1, const char *str_, const char *st
         }
       }
       break;
-    case 2: // n mod p(jest git)
+    case 2: 
       compiler->get_register_value(num2, str_2, str2, 1); // wczytanie dzielnika
       if(!compiler->checkLastCommand("STORE b")) {
         if(compiler->checkLastCommand("LOAD b")) {

@@ -7,7 +7,7 @@ IN
 END
 
 PROGRAM IS
- a[10],b
+  a[10],b
 IN
   READ b;
   pa(a,b);
