@@ -1,11 +1,18 @@
 
 #include "compiler.hpp"
-#include <iostream>
-#include <string>
-#include <vector>
-#include <sstream>
-#include <cstring>
-#include <algorithm>
+#include<iostream>
+#include<vector>
+#include<sstream>
+#include<cstring>
+#include<algorithm>
+
+// #include "compiler.hpp"
+// #include <iostream>
+// #include <string>
+// #include <vector>
+// #include <sstream>
+// #include <cstring>
+// #include <algorithm>
 
 extern void yyerror(const char *s);
 
@@ -30,7 +37,7 @@ int Compiler::get_declaration(const char *s) {
 }
 
 int Compiler::get_next_declaration(const char *s) {
-  auto it = std::find(declarationList.begin(), declarationList.end(), [s](const auto &pair) {
+  auto it = std::find_if(declarationList.begin(), declarationList.end(), [s](const auto &pair) {
     return strcmp(pair.first, s) == 0;
   });
   if(it != declarationList.end()) {
@@ -200,9 +207,6 @@ void Compiler::set_number(long long value, int r) {
     if(registers[r] == value) {
       break;
     }
-    // if(value == 0) {
-    //   break;
-    // }
 
     if(value_2_reg_2 * 2 < value && !decrement && value > 4) { 
       isNewRegisterApplied = true;
@@ -560,7 +564,7 @@ bool Compiler::check_var_initialization(const char *variable) {
     if(std::string(it.first) == variable) {
       return it.second;
     }
-  } // if not in initializationList, return false
+  }
   return false;
 }
 
@@ -642,13 +646,9 @@ std::vector<std::pair<int, bool>> Compiler::get_procedure_args(const char *s) {
       return i.second;
     }
   }
-  yyerror((std::string("Undefined procedure ") + s).c_str());
   return std::vector<std::pair<int, bool>>();
 }
 
-// bool Compiler::check_procedure_params(const char *s) {
-
-// }
 
 void Compiler::add_beginning_procedure(const char *s, int i) {
   beginning_procedure.push_back(std::make_pair(s, i));
@@ -664,13 +664,12 @@ int Compiler::get_beginning_procedure(const char *s) {
   return -1;
 }
 
-int Compiler::get_beginning_next_procedure(const char *s) { // poczatek kolejnej procedury
-  auto it = std::find(beginning_procedure.begin(), beginning_procedure.end(), [s](const auto &entry) {
+int Compiler::get_beginning_next_procedure(const char *s) {
+  auto it = std::find_if(beginning_procedure.begin(), beginning_procedure.end(), [s](const auto &entry) {
     return strcmp(entry.first, s) == 0; });
   if(it != beginning_procedure.end() && std::next(it) != beginning_procedure.end()) {
     return std::next(it)->second;
   }
-
   return -1;
 }
 
@@ -681,16 +680,6 @@ int Compiler::size_args_procedure(const char *s) {
     }
   }
   return -1;
-}
-
-bool Compiler::is_Tab(const char *s) {
-  std::cout << " ssik " << s << std::endl;
-  size_t len = strlen(s);
-  std::cout << len << " len" << std::endl;
-  if(len > 2 && s[len - 2] == '[' && s[len - 1] == ']') { // Ostatnie dwa znaki to nawiasy kwadratowe, co sugeruje tablicę.
-    return true;
-  }
-  return false;
 }
 
 void Compiler::add_commands_inside(const std::string s, int i) {

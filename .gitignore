@@ -1,0 +1,7 @@
+kompilator
+parser.cpp
+parser.hpp
+lexer.cpp
+.vscode/
+out/
+.DS_Store

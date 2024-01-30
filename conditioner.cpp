@@ -4,7 +4,13 @@
 #include <vector>
 #include <string>
 #include <cstring>
-#include <algorithm>
+
+// #include "conditioner.hpp"
+// #include <iostream>
+// #include <vector>
+// #include <string>
+// #include <cstring>
+// #include <algorithm>
 
 // Equal done and tested and little optimised
 void Conditioner::equal(long long num1, const char *str1, const char *str1_1, long long num2, const char *str2, const char *str2_2) {

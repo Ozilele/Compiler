@@ -3,8 +3,11 @@
 
 #include<string>
 #include<vector>
-#include <cstring>
-#include <algorithm>
+#include<utility>
+
+// #include<string>
+// #include<vector>
+// #include<cstring>
 
 class Compiler {
   private:
@@ -60,8 +63,6 @@ class Compiler {
     int get_beginning_procedure(const char *s); // not done
     int get_beginning_next_procedure(const char *s); // not done
     int size_args_procedure(const char *s); // not done
-    bool is_Tab(const char *s); // not done
-
     bool checkLastCommand(std::string s);
 };  
 

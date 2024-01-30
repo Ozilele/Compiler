@@ -4,6 +4,7 @@
   #include <vector>
   #include <string>
   #include <cstdio>
+  #include <cstring>
   #include "assembler_generator.hpp"
   #include "conditioner.hpp"
 
@@ -25,6 +26,7 @@
     long long num;
     char *str;
     char *str1;
+    bool isArray;
   };
 
 }
@@ -129,11 +131,9 @@ commands:
 
 command:
       identifier T_ASSIGN expression T_SEMICOLON {
-        if($1.num == 0) { // a
-          if(compiler.get_next_declaration($1.str) > compiler.get_declaration($1.str) + 1) { // $1.str is an array
-            if(!compiler.isAnArray($1.str)) {
-              yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe uzycie tablicy " + $1.str).c_str());
-            }
+        if(compiler.isAnArray($1.str)) {
+          if(!$1.isArray) { // single arr variable c(not valid)
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe użycie tablicy " + $1.str).c_str());
           }
         }
         bool whether = false;
@@ -197,12 +197,10 @@ command:
       | proc_call T_SEMICOLON {
         $$ = compiler.getCommandsNumber();
       }
-      | T_READ identifier T_SEMICOLON { // READ x, READ T[2], T[a]
-        if($2.num == 0) { // a
-          if(compiler.get_next_declaration($2.str) > compiler.get_declaration($2.str) + 1) {
-            if(compiler.isAnArray($2.str)) {
-              yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe uzycie tablicy " + $2.str).c_str());
-            }
+      | T_READ identifier T_SEMICOLON {
+        if(compiler.isAnArray($2.str)) {
+          if(!$2.isArray) { // single arr variable c(not valid)
+            yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe użycie tablicy " + $2.str).c_str());
           }
         }
         compiler.add_machine_command("READ");
@@ -211,7 +209,7 @@ command:
         compiler.set_variable_initialization($2.str);
         $$ = compiler.getCommandsNumber();
       }
-      | T_WRITE value T_SEMICOLON { // tested
+      | T_WRITE value T_SEMICOLON {
         if(strcmp($2.str, "") == 0) {
           compiler.set_number($2.num, 0);
         } else {
@@ -239,7 +237,7 @@ start:
 proc_head:
       T_IDENTIFIER T_LEFTPARENTHESIS args_decl T_RIGHTPARENTHESIS {
         std::cout << "Procedure name: " << $1 << std::endl;
-        compiler.add_beginning_procedure($1, compiler.getCommandsNumber()); // dodanie początkowej procedury
+        compiler.add_beginning_procedure($1, compiler.getCommandsNumber());
         compiler.add_declaration(" RETURN", 1);
         compiler.add_procedure($1);
         int min = compiler.get_first_declaration();
@@ -254,31 +252,22 @@ proc_call:
         if(compiler.size_args_procedure($1) == -1) {
           yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niezdefiniowana procedura " + $1).c_str());
         }
-        if(compiler.size_args_procedure($1) - 1 != compiler.arguments.size()) {
-          // if(compiler.size_args_procedure($1) == -1) {
-          //   yyerror((std::string("Undefined procedure ") + $1).c_str());
-          // }
-          yyerror((std::string("Invalid procedure params ") + $1).c_str());
-        }
         if(compiler.getCommandsNumber() < compiler.get_beginning_next_procedure($1) || compiler.get_beginning_next_procedure($1) == -1) {
-          yyerror((std::string("Invalid procedure use ") + $1).c_str());
+          yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe użycie procedury " + $1).c_str());
         }
-
         std::vector<std::pair<int, bool>> args = compiler.get_procedure_args($1);
         for(size_t i = 0; i < compiler.arguments.size(); ++i) { // procedure call arg. size
           compiler.set_variable_initialization(compiler.arguments[i]);
           std::cout << "Param to procedure " << compiler.arguments[i] << std::endl;
-          if(args[i].second) { // procedure arg is an array
-            if(!compiler.is_Tab(compiler.arguments[i])) {
+          if(args[i].second) { // procedure param is an array
+            if(!compiler.isAnArray(compiler.arguments[i])) {
               yyerror((std::string("Line ") + std::to_string(yylineno) + ": Niewłaściwe parametry procedury " + $1).c_str());
-              // yyerror((std::string("Invalid procedure params ") + $1).c_str());
             }
           }
-          compiler.get_register_value(0, compiler.arguments[i], nullptr, 0); // r_a <- 
+          compiler.get_register_value(0, compiler.arguments[i], nullptr, 0);
           compiler.add_machine_command("RST b");
-          // std::cout << "wartosc pod rejestrem b " << compiler.registers[1] << std::endl;
-          compiler.set_number(compiler.getIndex($1), 1); // r_b <- compiler.getIndex()
-          compiler.add_machine_command("STORE b"); // r_a <- p_rb
+          compiler.set_number(compiler.getIndex($1), 1); 
+          compiler.add_machine_command("STORE b"); 
           compiler.add_machine_command("RST a");
         }
 
@@ -298,30 +287,30 @@ proc_call:
 declarations:
       declarations T_COMMA T_IDENTIFIER {
         if(compiler.get_declaration($3) != -1) {
-          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $3).c_str());
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne użycie identyfikatora " + $3).c_str());
         }
         compiler.variables.push_back(std::make_pair($3, false));
         compiler.add_declaration($3, 1); // memory Cell to 1
       }
       | declarations T_COMMA T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET {
-        compiler.variables.push_back(std::make_pair($3, true));
         if(compiler.get_declaration($3) != -1) {
-          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $3).c_str());
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne użycie identyfikatora " + $3).c_str());
         }
+        compiler.variables.push_back(std::make_pair($3, true));
         compiler.add_declaration($3, $5);
       }
       | T_IDENTIFIER {
-        compiler.variables.push_back(std::make_pair($1, false));
         if(compiler.get_declaration($1) != -1) {
-          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $1).c_str());
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne użycie identyfikatora " + $1).c_str());
         }
+        compiler.variables.push_back(std::make_pair($1, false));
         compiler.add_declaration($1, 1);
       }
       | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[100]
-        compiler.variables.push_back(std::make_pair($1, true));
         if(compiler.get_declaration($1) != -1) {
-          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne uzycie identyfikatora " + $1).c_str());
+          yyerror((std::string("Line ") + std::to_string(yylineno - 2) + ": Powtórne użycie identyfikatora " + $1).c_str());
         }
+        compiler.variables.push_back(std::make_pair($1, true));
         compiler.add_declaration($1, $3);
       }
 ;
@@ -343,7 +332,7 @@ args_decl:
         compiler.add_declaration($1, 1);
         compiler.set_variable_initialization($1);
       }
-      | T T_IDENTIFIER { // array
+      | T T_IDENTIFIER { // T a
         compiler.procedure_args.push_back(true);
         compiler.add_declaration($2, 1);
         compiler.set_variable_initialization($2);
@@ -525,11 +514,13 @@ value:
       $$.str1 = new char[1];
       $$.str[0] = '\0';
       $$.str1[0] = '\0';
+      $$.isArray = false;
     }
     | identifier {
       $$.num = $1.num;
       $$.str = $1.str;
       $$.str1 = $1.str1;
+      $$.isArray = $1.isArray;
     }
 ;
 
@@ -544,6 +535,7 @@ identifier:
         $$.str = $1; // nazwa zmiennej
         $$.str1 = new char[1];
         $$.str1[0] = '\0';
+        $$.isArray = false;
       }
       | T_IDENTIFIER T_LEFT_BRACKET T_NUM T_RIGHT_BRACKET { // sito[10]
         std::string check = compiler.check_var_declaration($1, true);
@@ -555,6 +547,7 @@ identifier:
         $$.str = $1; // nazwa tablicy(zmiennej)
         $$.str1 = new char[1];
         $$.str1[0] = '\0';
+        $$.isArray = true;
       }
       | T_IDENTIFIER T_LEFT_BRACKET T_IDENTIFIER T_RIGHT_BRACKET { // sito[a]
         std::string check = compiler.check_var_declaration($1, true); // sprawdzenie deklaracji tablicy
@@ -568,6 +561,7 @@ identifier:
         $$.num = -1; // -1 bo indeks nie jest cyfra tylko zmienna
         $$.str = $1;
         $$.str1 = $3; // indeks w tablicy to zmienna
+        $$.isArray = true;
       }
 ;
 
