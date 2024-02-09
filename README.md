@@ -1,6 +1,4 @@
 Kompilator 2023/2024
-Autor: Bartłomiej Puchała
-Nr indeksu: 268501
 Pliki:
 main.cpp - Uruchamia cały program kompilatora, wywołuje funkcję z parsera, która rozpoczyna parsing
 lexer.l - Analiza leksykalna tokenów
